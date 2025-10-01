@@ -192,7 +192,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get mortgage calculation history for a user",
+                "description": "Get mortgage calculation history for authenticated user",
                 "consumes": [
                     "application/json"
                 ],
@@ -204,14 +204,6 @@ const docTemplate = `{
                 ],
                 "summary": "Get mortgage calculation history",
                 "parameters": [
-                    {
-                        "type": "integer",
-                        "format": "int64",
-                        "description": "User ID",
-                        "name": "user_id",
-                        "in": "query",
-                        "required": true
-                    },
                     {
                         "type": "integer",
                         "default": 50,
@@ -335,8 +327,7 @@ const docTemplate = `{
                 "loan_amount",
                 "property_price",
                 "rate_type",
-                "term_months",
-                "user_id"
+                "term_months"
             ],
             "properties": {
                 "bono_techo_propio": {
@@ -388,9 +379,6 @@ const docTemplate = `{
                     ]
                 },
                 "term_months": {
-                    "type": "integer"
-                },
-                "user_id": {
                     "type": "integer"
                 }
             }
@@ -495,7 +483,7 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "user_id": {
-                    "type": "integer"
+                    "type": "string"
                 }
             }
         },
@@ -527,7 +515,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "user_id": {
-                    "type": "integer"
+                    "type": "string"
                 }
             }
         },
@@ -594,8 +582,8 @@ const docTemplate = `{
                     "example": "John Doe"
                 },
                 "id": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
                 }
             }
         }

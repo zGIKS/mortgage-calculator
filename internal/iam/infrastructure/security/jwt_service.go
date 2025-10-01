@@ -16,7 +16,7 @@ type JWTService struct {
 
 // JWTClaims representa los claims personalizados del JWT
 type JWTClaims struct {
-	UserID uint64 `json:"user_id"`
+	UserID string `json:"user_id"`
 	Email  string `json:"email"`
 	jwt.RegisteredClaims
 }
@@ -31,7 +31,7 @@ func NewJWTService(secretKey string, issuer string, expirationHrs int) *JWTServi
 }
 
 // GenerateToken genera un nuevo token JWT
-func (s *JWTService) GenerateToken(userID uint64, email string) (string, error) {
+func (s *JWTService) GenerateToken(userID string, email string) (string, error) {
 	claims := JWTClaims{
 		UserID: userID,
 		Email:  email,

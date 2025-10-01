@@ -40,7 +40,7 @@ func (s *authenticationServiceImpl) HandleLogin(ctx context.Context, cmd command
 	}
 
 	// Generate JWT token
-	token, err := s.jwtService.GenerateToken(user.ID().Value(), user.Email().Value())
+	token, err := s.jwtService.GenerateToken(user.ID().String(), user.Email().Value())
 	if err != nil {
 		return "", errors.New("failed to generate token")
 	}

@@ -6,7 +6,7 @@ import (
 )
 
 type CalculateMortgageCommand struct {
-	UserID            uint64
+	UserID            string
 	PropertyPrice     float64
 	DownPayment       float64
 	LoanAmount        float64
@@ -21,7 +21,7 @@ type CalculateMortgageCommand struct {
 }
 
 func NewCalculateMortgageCommand(
-	userID uint64,
+	userID string,
 	propertyPrice float64,
 	downPayment float64,
 	loanAmount float64,
@@ -35,7 +35,7 @@ func NewCalculateMortgageCommand(
 	npvDiscountRate float64,
 ) (*CalculateMortgageCommand, error) {
 	// Validaciones básicas
-	if userID == 0 {
+	if userID == "" {
 		return nil, errors.New("user ID is required")
 	}
 	if propertyPrice <= 0 {

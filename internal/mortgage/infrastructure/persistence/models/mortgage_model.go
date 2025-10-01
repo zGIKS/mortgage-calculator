@@ -6,6 +6,8 @@ import (
 	"errors"
 	"finanzas-backend/internal/mortgage/domain/model/entities"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // PaymentScheduleJSON es un tipo personalizado para serializar el cronograma como JSON en la BD
@@ -30,7 +32,7 @@ func (p *PaymentScheduleJSON) Scan(value interface{}) error {
 // MortgageModel es el modelo de persistencia para GORM
 type MortgageModel struct {
 	ID                uint64              `gorm:"primaryKey;autoIncrement"`
-	UserID            uint64              `gorm:"not null;index"`
+	UserID            uuid.UUID           `gorm:"type:uuid;not null;index"`
 	PropertyPrice     float64             `gorm:"not null"`
 	DownPayment       float64             `gorm:"not null"`
 	LoanAmount        float64             `gorm:"not null"`

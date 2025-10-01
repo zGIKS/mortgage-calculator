@@ -46,8 +46,17 @@ func (c *MortgageController) CalculateMortgage(ctx *gin.Context) {
 		return
 	}
 
+	// Obtener user_id del contexto (guardado por el middleware JWT)
+	userIDValue, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	userID := userIDValue.(string)
+
 	cmd, err := commands.NewCalculateMortgageCommand(
-		req.UserID,
+		userID,
 		req.PropertyPrice,
 		req.DownPayment,
 		req.LoanAmount,
@@ -114,11 +123,10 @@ func (c *MortgageController) GetMortgageByID(ctx *gin.Context) {
 
 // GetMortgageHistory godoc
 // @Summary Get mortgage calculation history
-// @Description Get mortgage calculation history for a user
+// @Description Get mortgage calculation history for authenticated user
 // @Tags Mortgage
 // @Accept json
 // @Produce json
-// @Param user_id query uint64 true "User ID"
 // @Param limit query int false "Limit" default(50)
 // @Param offset query int false "Offset" default(0)
 // @Success 200 {array} resources.MortgageSummaryResource
@@ -127,17 +135,14 @@ func (c *MortgageController) GetMortgageByID(ctx *gin.Context) {
 // @Security BearerAuth
 // @Router /api/v1/mortgage/history [get]
 func (c *MortgageController) GetMortgageHistory(ctx *gin.Context) {
-	userIDStr := ctx.Query("user_id")
-	if userIDStr == "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
+	// Obtener user_id del contexto (guardado por el middleware JWT)
+	userIDValue, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
 		return
 	}
 
-	userID, err := strconv.ParseUint(userIDStr, 10, 64)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_id"})
-		return
-	}
+	userID := userIDValue.(string)
 
 	query, err := queries.NewGetMortgageHistoryQuery(userID)
 	if err != nil {

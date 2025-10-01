@@ -118,7 +118,7 @@ func (c *UserController) Login(ctx *gin.Context) {
 
 func (c *UserController) transformUserToResource(user *entities.User) resources.UserResource {
 	return resources.UserResource{
-		ID:        user.ID().Value(),
+		ID:        user.ID().String(),
 		Email:     user.Email().Value(),
 		FullName:  user.FullName(),
 		CreatedAt: user.CreatedAt(),

@@ -10,7 +10,7 @@ type GetMortgageHistoryQuery struct {
 	Offset int
 }
 
-func NewGetMortgageHistoryQuery(userID uint64) (*GetMortgageHistoryQuery, error) {
+func NewGetMortgageHistoryQuery(userID string) (*GetMortgageHistoryQuery, error) {
 	uid, err := valueobjects.NewUserID(userID)
 	if err != nil {
 		return nil, err

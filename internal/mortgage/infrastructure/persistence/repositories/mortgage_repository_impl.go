@@ -115,7 +115,7 @@ func (r *MortgageRepositoryImpl) toDomain(model *models.MortgageModel) (*entitie
 		return nil, err
 	}
 
-	userID, err := valueobjects.NewUserID(model.UserID)
+	userID, err := valueobjects.NewUserIDFromUUID(model.UserID)
 	if err != nil {
 		return nil, err
 	}

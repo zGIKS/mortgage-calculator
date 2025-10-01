@@ -39,8 +39,6 @@ definitions:
         type: string
       term_months:
         type: integer
-      user_id:
-        type: integer
     required:
     - currency
     - down_payment
@@ -50,7 +48,6 @@ definitions:
     - property_price
     - rate_type
     - term_months
-    - user_id
     type: object
   resources.LoginResource:
     properties:
@@ -120,7 +117,7 @@ definitions:
       total_paid:
         type: number
       user_id:
-        type: integer
+        type: string
     type: object
   resources.MortgageSummaryResource:
     properties:
@@ -141,7 +138,7 @@ definitions:
       term_months:
         type: integer
       user_id:
-        type: integer
+        type: string
     type: object
   resources.PaymentScheduleItemResource:
     properties:
@@ -188,8 +185,8 @@ definitions:
         example: John Doe
         type: string
       id:
-        example: 1
-        type: integer
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
     type: object
 host: localhost:8080
 info:
@@ -355,14 +352,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get mortgage calculation history for a user
+      description: Get mortgage calculation history for authenticated user
       parameters:
-      - description: User ID
-        format: int64
-        in: query
-        name: user_id
-        required: true
-        type: integer
       - default: 50
         description: Limit
         in: query

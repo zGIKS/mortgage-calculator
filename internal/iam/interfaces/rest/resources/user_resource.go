@@ -3,7 +3,7 @@ package resources
 import "time"
 
 type UserResource struct {
-	ID        uint64    `json:"id" example:"1"`
+	ID        string    `json:"id" example:"123e4567-e89b-12d3-a456-426614174000"`
 	Email     string    `json:"email" example:"user@example.com"`
 	FullName  string    `json:"full_name" example:"John Doe"`
 	CreatedAt time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`

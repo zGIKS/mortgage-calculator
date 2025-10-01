@@ -37,8 +37,8 @@ func JWTAuthMiddleware(externalAuthService *acl.ExternalAuthenticationService) g
 			return
 		}
 
-		// Guardar información del usuario en el contexto
-		c.Set("user_id", userID.Value())
+		// Guardar información del usuario en el contexto (UUID string)
+		c.Set("user_id", userID)
 
 		c.Next()
 	}

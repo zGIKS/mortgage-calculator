@@ -7,7 +7,6 @@ import (
 
 // CalculateMortgageRequest representa la solicitud para calcular un crédito hipotecario
 type CalculateMortgageRequest struct {
-	UserID            uint64  `json:"user_id" binding:"required"`
 	PropertyPrice     float64 `json:"property_price" binding:"required,gt=0"`
 	DownPayment       float64 `json:"down_payment" binding:"required,gte=0"`
 	LoanAmount        float64 `json:"loan_amount" binding:"required,gt=0"`
@@ -34,7 +33,7 @@ type PaymentScheduleItemResource struct {
 // MortgageResponse representa la respuesta completa con todos los cálculos
 type MortgageResponse struct {
 	ID                uint64                        `json:"id"`
-	UserID            uint64                        `json:"user_id"`
+	UserID            string                        `json:"user_id"`
 	PropertyPrice     float64                       `json:"property_price"`
 	DownPayment       float64                       `json:"down_payment"`
 	LoanAmount        float64                       `json:"loan_amount"`
@@ -63,7 +62,7 @@ type MortgageResponse struct {
 // MortgageSummaryResource representa un resumen de hipoteca (para listas)
 type MortgageSummaryResource struct {
 	ID                uint64    `json:"id"`
-	UserID            uint64    `json:"user_id"`
+	UserID            string    `json:"user_id"`
 	PropertyPrice     float64   `json:"property_price"`
 	LoanAmount        float64   `json:"loan_amount"`
 	Currency          string    `json:"currency"`
@@ -91,7 +90,7 @@ func TransformToMortgageResponse(mortgage *entities.Mortgage) MortgageResponse {
 
 	return MortgageResponse{
 		ID:                mortgage.ID().Value(),
-		UserID:            mortgage.UserID().Value(),
+		UserID:            mortgage.UserID().String(),
 		PropertyPrice:     mortgage.PropertyPrice(),
 		DownPayment:       mortgage.DownPayment(),
 		LoanAmount:        mortgage.LoanAmount(),
@@ -119,7 +118,7 @@ func TransformToMortgageResponse(mortgage *entities.Mortgage) MortgageResponse {
 func TransformToMortgageSummary(mortgage *entities.Mortgage) MortgageSummaryResource {
 	return MortgageSummaryResource{
 		ID:               mortgage.ID().Value(),
-		UserID:           mortgage.UserID().Value(),
+		UserID:           mortgage.UserID().String(),
 		PropertyPrice:    mortgage.PropertyPrice(),
 		LoanAmount:       mortgage.LoanAmount(),
 		Currency:         mortgage.Currency().String(),
