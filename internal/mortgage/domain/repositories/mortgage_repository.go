@@ -1,0 +1,13 @@
+package repositories
+
+import (
+	"context"
+	"finanzas-backend/internal/mortgage/domain/model/entities"
+	"finanzas-backend/internal/mortgage/domain/model/valueobjects"
+)
+
+type MortgageRepository interface {
+	Save(ctx context.Context, mortgage *entities.Mortgage) error
+	FindByID(ctx context.Context, id valueobjects.MortgageID) (*entities.Mortgage, error)
+	FindByUserID(ctx context.Context, userID valueobjects.UserID, limit, offset int) ([]*entities.Mortgage, error)
+}
