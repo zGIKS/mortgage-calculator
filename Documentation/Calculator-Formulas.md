@@ -21,6 +21,12 @@ La lógica de la calculadora está encapsulada en el servicio `FrenchMethodCalcu
 
 **Explicación**: El principal financiado es el monto del préstamo después de restar cualquier bono o subsidio aplicado. Debe ser mayor que cero.
 
+**Variables:**
+
+- $ P $: Principal financiado (monto neto del préstamo que se amortizará, excluyendo subsidios)
+- $ \text{LoanAmount} $: Monto total del préstamo solicitado por el cliente (monto bruto antes de deducciones)
+- $ \text{BonoTechoPropio} $: Bono o subsidio aplicado al "techo propio" (aportación inicial o subsidios gubernamentales que reducen el monto a financiar)
+
 **Notación Big O**: $ O(1) $ - Operación constante.
 
 ### 2. Conversión a Tasa Periódica Mensual
@@ -30,10 +36,18 @@ La lógica de la calculadora está encapsulada en el servicio `FrenchMethodCalcu
 
 **Explicación**: Si la tasa es nominal anual, se divide entre 12 para obtener la tasa mensual efectiva.
 
+**Variables:**
+- $ i $: Tasa periódica mensual (tasa de interés efectiva mensual)
+- $ \text{TNA} $: Tasa Nominal Anual (tasa de interés expresada anualmente, sin considerar capitalización)
+
 #### Para Tasa Efectiva Anual (TEA)
 **Fórmula**: $ i = (1 + \text{TEA})^{\frac{1}{12}} - 1 $
 
 **Explicación**: Para tasas efectivas anuales, se calcula la tasa mensual equivalente usando la fórmula de capitalización compuesta.
+
+**Variables:**
+- $ i $: Tasa periódica mensual (tasa efectiva mensual equivalente)
+- $ \text{TEA} $: Tasa Efectiva Anual (tasa que incluye la capitalización de intereses)
 
 **Notación Big O**: $ O(1) $ - Operaciones matemáticas constantes.
 
@@ -43,18 +57,25 @@ La lógica de la calculadora está encapsulada en el servicio `FrenchMethodCalcu
 
 **Explicación**: Si hay un período de gracia total, los intereses se capitalizan durante ese período, aumentando el principal que se amortizará posteriormente.
 
+**Variables:**
+- $ P_{\text{gracia}} $: Principal ajustado después del período de gracia (monto capitalizado)
+- $ P $: Principal financiado original
+- $ i $: Tasa periódica mensual
+- $ n_{\text{gracia}} $: Número de meses de período de gracia total
+
 **Notación Big O**: $ O(1) $ - Cálculo exponencial constante.
 
 ### 4. Cálculo de la Cuota Fija (Método Francés)
 
 **Fórmula**: $ A = P \times \frac{i \times (1 + i)^n}{(1 + i)^n - 1} $
 
-Donde:
-- $ P $: Principal ajustado
-- $ i $: Tasa periódica mensual
-- $ n $: Número de períodos normales (término total - períodos de gracia)
-
 **Explicación**: Esta es la fórmula clásica del método francés. Calcula la cuota fija que incluye intereses y amortización para pagar el préstamo en n períodos.
+
+**Variables:**
+- $ A $: Cuota fija mensual (monto constante que se paga cada período)
+- $ P $: Principal ajustado (monto a amortizar después de ajustes por gracia)
+- $ i $: Tasa periódica mensual (tasa de interés efectiva mensual)
+- $ n $: Número de períodos normales (término total en meses menos períodos de gracia)
 
 **Notación Big O**: $ O(1) $ - Operaciones matemáticas constantes.
 
@@ -65,15 +86,41 @@ Para cada período k (de 1 a término total):
 #### Interés del período
 **Fórmula**: $ I_k = \text{saldo}_{k-1} \times i $
 
+**Variables:**
+- $ I_k $: Interés del período k (monto de intereses calculados sobre el saldo pendiente)
+- $ \text{saldo}_{k-1} $: Saldo pendiente al inicio del período k (capital restante por amortizar)
+- $ i $: Tasa periódica mensual
+- $ k $: Número del período actual
+
 #### Amortización
 **Fórmula**: $ C_k = A - I_k $ (para períodos normales)
+
+**Variables:**
+- $ C_k $: Amortización del período k (parte de la cuota que reduce el capital)
+- $ A $: Cuota fija mensual
+- $ I_k $: Interés del período k
 
 #### Nuevo saldo
 **Fórmula**: $ \text{saldo}_k = \text{saldo}_{k-1} - C_k $
 
+**Variables:**
+- $ \text{saldo}_k $: Saldo pendiente al final del período k
+- $ \text{saldo}_{k-1} $: Saldo pendiente al inicio del período k
+- $ C_k $: Amortización del período k
+
 #### Tratamiento de períodos de gracia:
 - **Gracia Total**: No se paga nada, intereses se capitalizan: $ \text{saldo}_k = \text{saldo}_{k-1} + I_k $
+
+  **Variables:**
+  - $ \text{saldo}_k $: Saldo capitalizado (incluye intereses no pagados)
+  - $ \text{saldo}_{k-1} $: Saldo anterior
+  - $ I_k $: Intereses generados (se agregan al capital)
+
 - **Gracia Parcial**: Solo se paga interés: $ \text{saldo}_k = \text{saldo}_{k-1} $
+
+  **Variables:**
+  - $ \text{saldo}_k $: Saldo permanece igual (no se amortiza capital)
+  - $ \text{saldo}_{k-1} $: Saldo anterior
 
 **Notación Big O**: $ O(n) $ donde n es el número total de meses del préstamo. Es lineal porque itera una vez por cada período.
 
@@ -81,12 +128,15 @@ Para cada período k (de 1 a término total):
 
 **Fórmula**: $ \text{VAN} = -P + \sum_{k=1}^{n} \frac{\text{CF}_k}{(1 + j)^k} $
 
-Donde:
-- $ \text{CF}_k $: Flujo de caja en el período k (cuota pagada)
-- $ j $: Tasa de descuento mensual
-- $ P $: Principal financiado
-
 **Explicación**: El VAN mide la rentabilidad del proyecto descontando todos los flujos de caja a valor presente.
+
+**Variables:**
+- $ \text{VAN} $: Valor Actual Neto (mide si el proyecto es rentable; positivo = rentable)
+- $ P $: Principal financiado (inversión inicial, flujo negativo)
+- $ \text{CF}_k $: Flujo de caja en el período k (cuotas pagadas por el cliente)
+- $ j $: Tasa de descuento mensual (tasa usada para descontar flujos futuros)
+- $ n $: Número total de períodos
+- $ k $: Índice del período (de 1 a n)
 
 **Notación Big O**: $ O(n) $ - Suma lineal sobre los n períodos.
 
@@ -99,9 +149,13 @@ $$
 r_{n+1} = r_n - \frac{\text{VAN}(r_n)}{\text{VAN}'(r_n)}
 $$
 
-Donde VAN'(r) es la derivada de VAN respecto a r.
-
 **Explicación**: La TIR es la tasa de descuento que hace que el VAN sea cero. Es la tasa de rentabilidad interna del proyecto.
+
+**Variables:**
+- $ r $: Tasa interna de retorno (tasa que hace VAN = 0)
+- $ \text{VAN}(r) $: Función del Valor Actual Neto evaluada en r
+- $ \text{VAN}'(r) $: Derivada de VAN respecto a r (usada para la aproximación)
+- $ n $: Iteración actual del método numérico
 
 **Notación Big O**: $ O(n \times \text{iteraciones}) $ - Por cada iteración (máximo 1000), se calcula VAN y su derivada, cada una O(n).
 
@@ -110,6 +164,10 @@ Donde VAN'(r) es la derivada de VAN respecto a r.
 **Fórmula**: $ \text{TCEA} = (1 + \text{TIR}_{\text{mensual}})^{12} - 1 $
 
 **Explicación**: Convierte la tasa interna de retorno mensual a su equivalente anual efectivo.
+
+**Variables:**
+- $ \text{TCEA} $: Tasa de Costo Efectivo Anual (tasa anual efectiva del préstamo)
+- $ \text{TIR}_{\text{mensual}} $: Tasa Interna de Retorno mensual (calculada previamente)
 
 **Notación Big O**: $ O(1) $ - Operación exponencial constante.
 
@@ -129,6 +187,3 @@ Donde VAN'(r) es la derivada de VAN respecto a r.
 - **Precisión**: Se redondean saldos pequeños (< 0.01) para evitar errores de punto flotante
 - **Validaciones**: Se verifican condiciones como principal > 0, términos válidos, etc.
 
-## Conclusión
-
-Esta implementación proporciona una calculadora financiera robusta y precisa del método francés, con todas las fórmulas matemáticas estándar implementadas correctamente. La separación de responsabilidades en capas de dominio/aplicación/infraestructura asegura mantenibilidad y testabilidad.
