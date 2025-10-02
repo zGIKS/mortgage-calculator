@@ -1,0 +1,169 @@
+@startuml Calculadora Hipotecaria - Método Francés
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam handwritten false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title Diagrama de Flujo - Calculadora Hipotecaria\nMétodo Francés - Endpoint: POST /api/v1/mortgage/calculate
+
+start
+
+:Usuario autenticado envía datos\n(property_price, down_payment,\nloan_amount, bono_techo_propio,\ninterest_rate, rate_type,\nterm_months, grace_period_*, currency);
+
+:Verificar autenticación JWT\n(middleware);
+
+if (¿Token válido?) then (NO)
+  :Retornar error 401\nUnauthorized;
+  stop
+else (SÍ)
+endif
+
+:Extraer user_id del token JWT;
+
+:Validar formato del request\n(binding JSON);
+
+if (¿Datos válidos?) then (NO)
+  :Retornar error 400\nBad Request;
+  stop
+else (SÍ)
+endif
+
+:Crear comando\nCalculateMortgageCommand;
+
+:Validar reglas de negocio:\n- property_price > 0\n- loan_amount > 0\n- term_months > grace_period_months;
+
+if (¿Validaciones OK?) then (NO)
+  :Retornar error 400\ncon mensaje específico;
+  stop
+else (SÍ)
+endif
+
+:Crear value objects:\n- UserID\n- RateType (NOMINAL/EFFECTIVE)\n- GracePeriodType (NONE/PARTIAL/TOTAL)\n- Currency (PEN/USD);
+
+:Crear entidad Mortgage;
+
+partition "Cálculo del Método Francés" {
+
+  :1. Calcular Principal Financiado:\nPrincipal = loan_amount - bono_techo_propio;
+
+  if (¿Principal > 0?) then (NO)
+    :Retornar error\n"Principal must be > 0";
+    stop
+  else (SÍ)
+  endif
+
+  :2. Convertir tasa anual a mensual;
+
+  if (¿Tasa es NOMINAL?) then (SÍ)
+    :TEM = TNA / 12;
+  else (NO - EFFECTIVE)
+    :TEM = (1 + TEA)^(1/12) - 1;
+  endif
+
+  :3. Ajustar principal si hay\ngracia TOTAL;
+
+  if (¿Gracia TOTAL?) then (SÍ)
+    :Principal_ajustado = Principal × (1 + i)^n_gracia;
+    note right
+      Los intereses se
+      capitalizan durante
+      el período de gracia
+    end note
+  else (NO)
+    :Principal_ajustado = Principal;
+  endif
+
+  :4. Calcular períodos normales:\nn_normal = term_months - grace_period_months;
+
+  :5. Calcular cuota fija:\nA = P × [i(1+i)^n] / [(1+i)^n - 1];
+
+  note right
+    Fórmula del Método Francés
+    para cuotas constantes
+  end note
+
+  :6. Generar cronograma de pagos;
+
+  partition "Para cada período (1 a term_months)" {
+
+    if (¿Es período de gracia?) then (SÍ)
+
+      if (¿Gracia TOTAL?) then (SÍ)
+        :Cuota = 0\nAmortización = 0\nInterés = Saldo × i\nSaldo_nuevo = Saldo + Interés;
+      else (NO - PARCIAL)
+        :Cuota = Interés\nAmortización = 0\nInterés = Saldo × i\nSaldo_nuevo = Saldo;
+      endif
+
+    else (NO - Período normal)
+
+      :Interés = Saldo × i\nAmortización = Cuota - Interés\nSaldo_nuevo = Saldo - Amortización;
+
+    endif
+
+    :Agregar item al cronograma\n(period, installment, interest,\namortization, remaining_balance);
+
+  }
+
+  :7. Calcular totales:\nTotal_Intereses = Σ intereses\nTotal_Pagado = Σ cuotas;
+
+}
+
+partition "Cálculos Financieros Adicionales" {
+
+  if (¿npv_discount_rate > 0?) then (SÍ)
+    :Calcular VAN (Valor Actual Neto):\nVAN = -P + Σ[Cuota_k / (1 + j)^k];
+    note right
+      j = tasa de descuento mensual
+    end note
+  else (NO)
+    :VAN = 0;
+  endif
+
+  :Calcular TIR (Tasa Interna de Retorno)\nMétodo Newton-Raphson:\nEncontrar i donde VAN = 0;
+
+  note right
+    Se itera hasta que
+    |VAN| < 0.0000001
+    o max 1000 iteraciones
+  end note
+
+  :Calcular TCEA:\nTCEA = (1 + TIR_mensual)^12 - 1;
+
+  note right
+    Tasa de Costo Efectivo Anual
+    Representa el costo real
+    del préstamo
+  end note
+
+}
+
+:Guardar Mortgage completo\nen base de datos;
+
+if (¿Guardado exitoso?) then (NO)
+  :Retornar error 500\nInternal Server Error;
+  stop
+else (SÍ)
+endif
+
+:Transformar entidad a\nMortgageResponse con:\n- Datos de entrada\n- Resultados calculados\n- Cronograma completo\n- VAN, TIR, TCEA;
+
+:Retornar respuesta 200\nOK con todos los cálculos;
+
+stop
+
+legend right
+  |= Símbolo |= Descripción |
+  | P | Principal financiado |
+  | i | Tasa de interés mensual |
+  | n | Número de períodos |
+  | A | Cuota fija |
+  | TEM | Tasa Efectiva Mensual |
+  | TNA | Tasa Nominal Anual |
+  | TEA | Tasa Efectiva Anual |
+  | VAN | Valor Actual Neto |
+  | TIR | Tasa Interna de Retorno |
+  | TCEA | Tasa de Costo Efectivo Anual |
+endlegend
+
+@enduml

@@ -7,6 +7,7 @@ import (
 	"finanzas-backend/internal/mortgage/domain/model/valueobjects"
 	"finanzas-backend/internal/mortgage/domain/repositories"
 	"finanzas-backend/internal/mortgage/infrastructure/persistence/models"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -19,25 +20,40 @@ func NewMortgageRepository(db *gorm.DB) repositories.MortgageRepository {
 }
 
 func (r *MortgageRepositoryImpl) Save(ctx context.Context, mortgage *entities.Mortgage) error {
-	model := r.toModel(mortgage)
-	result := r.db.WithContext(ctx).Create(model)
-	if result.Error != nil {
-		return result.Error
-	}
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Guardar mortgage
+		mortgageModel := r.toModel(mortgage)
+		if err := tx.Create(mortgageModel).Error; err != nil {
+			return err
+		}
 
-	// Asignar ID generado
-	id, err := valueobjects.NewMortgageID(model.ID)
-	if err != nil {
-		return err
-	}
-	mortgage.SetID(id)
+		// Asignar ID generado
+		id, err := valueobjects.NewMortgageID(mortgageModel.ID)
+		if err != nil {
+			return err
+		}
+		mortgage.SetID(id)
 
-	return nil
+		// Guardar items del cronograma
+		if mortgage.PaymentSchedule() != nil {
+			scheduleItems := r.toScheduleItemModels(mortgageModel.ID, mortgageModel.UserID, mortgage.PaymentSchedule())
+			if len(scheduleItems) > 0 {
+				if err := tx.Create(&scheduleItems).Error; err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	})
 }
 
 func (r *MortgageRepositoryImpl) FindByID(ctx context.Context, id valueobjects.MortgageID) (*entities.Mortgage, error) {
 	var model models.MortgageModel
-	result := r.db.WithContext(ctx).First(&model, id.Value())
+	result := r.db.WithContext(ctx).
+		Preload("PaymentScheduleItems").
+		First(&model, id.Value())
+
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, errors.New("mortgage not found")
@@ -55,6 +71,7 @@ func (r *MortgageRepositoryImpl) FindByUserID(
 ) ([]*entities.Mortgage, error) {
 	var models []models.MortgageModel
 	result := r.db.WithContext(ctx).
+		Preload("PaymentScheduleItems").
 		Where("user_id = ?", userID.Value()).
 		Order("created_at DESC").
 		Limit(limit).
@@ -77,12 +94,58 @@ func (r *MortgageRepositoryImpl) FindByUserID(
 	return mortgages, nil
 }
 
-func (r *MortgageRepositoryImpl) toModel(mortgage *entities.Mortgage) *models.MortgageModel {
-	var scheduleJSON models.PaymentScheduleJSON
-	if mortgage.PaymentSchedule() != nil {
-		scheduleJSON = mortgage.PaymentSchedule().GetItems()
+func (r *MortgageRepositoryImpl) Update(ctx context.Context, mortgage *entities.Mortgage) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Actualizar mortgage
+		mortgageModel := r.toModel(mortgage)
+		result := tx.Model(&models.MortgageModel{}).
+			Where("id = ?", mortgage.ID().Value()).
+			Updates(mortgageModel)
+
+		if result.Error != nil {
+			return result.Error
+		}
+
+		if result.RowsAffected == 0 {
+			return errors.New("mortgage not found")
+		}
+
+		// Eliminar items antiguos del cronograma
+		if err := tx.Where("mortgage_id = ?", mortgage.ID().Value()).
+			Delete(&models.PaymentScheduleItemModel{}).Error; err != nil {
+			return err
+		}
+
+		// Guardar nuevos items del cronograma
+		if mortgage.PaymentSchedule() != nil {
+			scheduleItems := r.toScheduleItemModels(mortgage.ID().Value(), mortgage.UserID().Value().String(), mortgage.PaymentSchedule())
+			if len(scheduleItems) > 0 {
+				if err := tx.Create(&scheduleItems).Error; err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	})
+}
+
+func (r *MortgageRepositoryImpl) Delete(ctx context.Context, id valueobjects.MortgageID) error {
+	// El CASCADE en la FK eliminará automáticamente los items del cronograma
+	result := r.db.WithContext(ctx).Delete(&models.MortgageModel{}, id.Value())
+
+	if result.Error != nil {
+		return result.Error
 	}
 
+	if result.RowsAffected == 0 {
+		return errors.New("mortgage not found")
+	}
+
+	return nil
+}
+
+func (r *MortgageRepositoryImpl) toModel(mortgage *entities.Mortgage) *models.MortgageModel {
 	return &models.MortgageModel{
 		ID:                mortgage.ID().Value(),
 		UserID:            mortgage.UserID().Value(),
@@ -99,7 +162,6 @@ func (r *MortgageRepositoryImpl) toModel(mortgage *entities.Mortgage) *models.Mo
 		PrincipalFinanced: mortgage.PrincipalFinanced(),
 		PeriodicRate:      mortgage.PeriodicRate(),
 		FixedInstallment:  mortgage.FixedInstallment(),
-		PaymentSchedule:   scheduleJSON,
 		TotalInterestPaid: mortgage.TotalInterestPaid(),
 		TotalPaid:         mortgage.TotalPaid(),
 		NPV:               mortgage.NPV(),
@@ -107,6 +169,40 @@ func (r *MortgageRepositoryImpl) toModel(mortgage *entities.Mortgage) *models.Mo
 		TCEA:              mortgage.TCEA(),
 		CreatedAt:         mortgage.CreatedAt(),
 	}
+}
+
+func (r *MortgageRepositoryImpl) toScheduleItemModels(
+	mortgageID uint64,
+	userID interface{},
+	schedule *entities.PaymentSchedule,
+) []models.PaymentScheduleItemModel {
+	items := schedule.GetItems()
+	itemModels := make([]models.PaymentScheduleItemModel, 0, len(items))
+
+	// Convertir userID según el tipo recibido
+	var userUUID uuid.UUID
+	switch v := userID.(type) {
+	case uuid.UUID:
+		userUUID = v
+	case string:
+		parsed, _ := uuid.Parse(v)
+		userUUID = parsed
+	}
+
+	for _, item := range items {
+		itemModels = append(itemModels, models.PaymentScheduleItemModel{
+			MortgageID:       mortgageID,
+			UserID:           userUUID,
+			Period:           item.Period,
+			Installment:      item.Installment,
+			Interest:         item.Interest,
+			Amortization:     item.Amortization,
+			RemainingBalance: item.RemainingBalance,
+			IsGracePeriod:    item.IsGracePeriod,
+		})
+	}
+
+	return itemModels
 }
 
 func (r *MortgageRepositoryImpl) toDomain(model *models.MortgageModel) (*entities.Mortgage, error) {
@@ -159,11 +255,18 @@ func (r *MortgageRepositoryImpl) toDomain(model *models.MortgageModel) (*entitie
 		model.CreatedAt,
 	)
 
-	// Reconstruir cronograma
-	if len(model.PaymentSchedule) > 0 {
+	// Reconstruir cronograma desde items
+	if len(model.PaymentScheduleItems) > 0 {
 		schedule := entities.NewPaymentSchedule()
-		for _, item := range model.PaymentSchedule {
-			schedule.AddItem(item)
+		for _, itemModel := range model.PaymentScheduleItems {
+			schedule.AddItem(entities.PaymentScheduleItem{
+				Period:           itemModel.Period,
+				Installment:      itemModel.Installment,
+				Interest:         itemModel.Interest,
+				Amortization:     itemModel.Amortization,
+				RemainingBalance: itemModel.RemainingBalance,
+				IsGracePeriod:    itemModel.IsGracePeriod,
+			})
 		}
 		mortgage.SetPaymentSchedule(schedule)
 	}

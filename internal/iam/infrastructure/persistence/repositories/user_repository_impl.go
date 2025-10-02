@@ -39,6 +39,24 @@ func (r *userRepositoryImpl) Save(ctx context.Context, user *entities.User) erro
 	return nil
 }
 
+func (r *userRepositoryImpl) Update(ctx context.Context, user *entities.User) error {
+	model := models.FromEntity(user)
+
+	result := r.db.WithContext(ctx).Model(&models.UserModel{}).
+		Where("id = ?", user.ID().Value()).
+		Updates(model)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return errors.New("user not found")
+	}
+
+	return nil
+}
+
 func (r *userRepositoryImpl) FindByID(ctx context.Context, id valueobjects.UserID) (*entities.User, error) {
 	return r.FindByIDValue(ctx, id.String())
 }

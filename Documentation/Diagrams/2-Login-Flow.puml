@@ -1,0 +1,68 @@
+@startuml Inicio de Sesión - Sign In
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam handwritten false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title Diagrama de Flujo - Inicio de Sesión (Sign In)\nEndpoint: POST /api/v1/iam/login
+
+start
+
+:Usuario envía credenciales\n(email, password);
+
+:Validar formato del request\n(binding JSON);
+
+if (¿Datos válidos?) then (NO)
+  :Retornar error 400\nBad Request;
+  stop
+else (SÍ)
+endif
+
+:Crear comando\nLoginCommand;
+
+if (¿Email válido?) then (NO)
+  :Retornar error 400\n"Invalid email format";
+  stop
+else (SÍ)
+endif
+
+:Buscar usuario por email\nen la base de datos;
+
+if (¿Usuario encontrado?) then (NO)
+  :Retornar error 401\nUnauthorized\n"Invalid credentials";
+  stop
+else (SÍ)
+endif
+
+:Verificar password\ncon bcrypt.CompareHashAndPassword;
+
+if (¿Password correcto?) then (NO)
+  :Retornar error 401\nUnauthorized\n"Invalid credentials";
+  stop
+else (SÍ)
+endif
+
+:Generar JWT Token\ncon:\n- user_id (UUID)\n- email\n- issuer\n- expiration (configurado);
+
+:Consultar datos completos\ndel usuario;
+
+:Transformar entidad\na UserResource;
+
+:Crear LoginResponseResource\ncon token y datos del usuario;
+
+:Retornar respuesta 200\nOK con token JWT;
+
+note right
+  El token JWT contiene:
+  - user_id
+  - email
+  - issuer
+  - exp (expiración)
+  - nbf (not before)
+  - iat (issued at)
+end note
+
+stop
+
+@enduml

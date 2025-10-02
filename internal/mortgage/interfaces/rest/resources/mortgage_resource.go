@@ -20,6 +20,21 @@ type CalculateMortgageRequest struct {
 	NPVDiscountRate   float64 `json:"npv_discount_rate" binding:"gte=0"`
 }
 
+// UpdateMortgageRequest representa la solicitud para actualizar un crédito hipotecario
+type UpdateMortgageRequest struct {
+	PropertyPrice     *float64 `json:"property_price,omitempty" binding:"omitempty,gt=0"`
+	DownPayment       *float64 `json:"down_payment,omitempty" binding:"omitempty,gte=0"`
+	LoanAmount        *float64 `json:"loan_amount,omitempty" binding:"omitempty,gt=0"`
+	BonoTechoPropio   *float64 `json:"bono_techo_propio,omitempty" binding:"omitempty,gte=0"`
+	InterestRate      *float64 `json:"interest_rate,omitempty" binding:"omitempty,gte=0"`
+	RateType          *string  `json:"rate_type,omitempty" binding:"omitempty,oneof=NOMINAL EFFECTIVE"`
+	TermMonths        *int     `json:"term_months,omitempty" binding:"omitempty,gt=0"`
+	GracePeriodMonths *int     `json:"grace_period_months,omitempty" binding:"omitempty,gte=0"`
+	GracePeriodType   *string  `json:"grace_period_type,omitempty" binding:"omitempty,oneof=NONE TOTAL PARTIAL"`
+	Currency          *string  `json:"currency,omitempty" binding:"omitempty,oneof=PEN USD"`
+	NPVDiscountRate   *float64 `json:"npv_discount_rate,omitempty" binding:"omitempty,gte=0"`
+}
+
 // PaymentScheduleItemResource representa un item del cronograma
 type PaymentScheduleItemResource struct {
 	Period           int     `json:"period"`
