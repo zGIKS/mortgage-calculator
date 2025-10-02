@@ -32,14 +32,20 @@ func (fmc *FrenchMethodCalculator) Calculate(mortgage *entities.Mortgage) error 
 
 	// 3. Ajustar principal si hay gracia total (capitalización de intereses)
 	adjustedPrincipal := principalFinanced
-	if mortgage.GracePeriodType() == valueobjects.GracePeriodTotal && mortgage.GracePeriodMonths() > 0 {
-		// P_gracia = P * (1 + i)^n_gracia
-		adjustedPrincipal = principalFinanced * math.Pow(1+periodicRate, float64(mortgage.GracePeriodMonths()))
+	gracePeriods := 0
+
+	if mortgage.GracePeriodType() != valueobjects.GracePeriodNone && mortgage.GracePeriodMonths() > 0 {
+		gracePeriods = mortgage.GracePeriodMonths()
+
+		if mortgage.GracePeriodType() == valueobjects.GracePeriodTotal {
+			// P_gracia = P * (1 + i)^n_gracia
+			adjustedPrincipal = principalFinanced * math.Pow(1+periodicRate, float64(gracePeriods))
+		}
 	}
 
 	// 4. Calcular cuota fija para periodos posteriores a la gracia
 	// A = P * [i(1+i)^n] / [(1+i)^n - 1]
-	normalPeriods := mortgage.TermMonths() - mortgage.GracePeriodMonths()
+	normalPeriods := mortgage.TermMonths() - gracePeriods
 	if normalPeriods <= 0 {
 		return errors.New("term months must be greater than grace period months")
 	}
@@ -108,14 +114,17 @@ func (fmc *FrenchMethodCalculator) generatePaymentSchedule(
 	balance := mortgage.PrincipalFinanced() // Saldo inicial (antes de gracia)
 
 	totalMonths := mortgage.TermMonths()
-	gracePeriods := mortgage.GracePeriodMonths()
+	gracePeriods := 0
+	if mortgage.GracePeriodType() != valueobjects.GracePeriodNone {
+		gracePeriods = mortgage.GracePeriodMonths()
+	}
 
 	for period := 1; period <= totalMonths; period++ {
 		var item entities.PaymentScheduleItem
 		item.Period = period
 
 		// Determinar si es periodo de gracia
-		isGracePeriod := period <= gracePeriods
+		isGracePeriod := gracePeriods > 0 && period <= gracePeriods
 		item.IsGracePeriod = isGracePeriod
 
 		// Calcular interés del periodo: I_k = saldo * i
