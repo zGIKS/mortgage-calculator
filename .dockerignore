@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+Documentation/
+*.md
+README.md
+
+# Environment files (se configurarán en Render)
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+
+# Temporary files
+*.swp
+*.swo
+*~
+
+# Build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test coverage
+*.out
+coverage.txt
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node modules (si los hay)
+node_modules/
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml

@@ -59,6 +59,9 @@ func main() {
 	// Setup Gin
 	router := gin.Default()
 
+	// Setup CORS
+	router.Use(corsMiddleware())
+
 	// Setup dependencies and routes
 	iamFacade := setupIAMContext(router, db, cfg)
 	setupMortgageContext(router, db, iamFacade)
@@ -84,6 +87,23 @@ func main() {
 
 	if err := router.Run(":" + cfg.Server.Port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
+	}
+}
+
+// corsMiddleware configura CORS para producción y desarrollo
+func corsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
 	}
 }
 
