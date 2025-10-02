@@ -77,6 +77,37 @@ func (r *MortgageRepositoryImpl) FindByUserID(
 	return mortgages, nil
 }
 
+func (r *MortgageRepositoryImpl) Update(ctx context.Context, mortgage *entities.Mortgage) error {
+	model := r.toModel(mortgage)
+	result := r.db.WithContext(ctx).Model(&models.MortgageModel{}).
+		Where("id = ?", mortgage.ID().Value()).
+		Updates(model)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return errors.New("mortgage not found")
+	}
+
+	return nil
+}
+
+func (r *MortgageRepositoryImpl) Delete(ctx context.Context, id valueobjects.MortgageID) error {
+	result := r.db.WithContext(ctx).Delete(&models.MortgageModel{}, id.Value())
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return errors.New("mortgage not found")
+	}
+
+	return nil
+}
+
 func (r *MortgageRepositoryImpl) toModel(mortgage *entities.Mortgage) *models.MortgageModel {
 	var scheduleJSON models.PaymentScheduleJSON
 	if mortgage.PaymentSchedule() != nil {

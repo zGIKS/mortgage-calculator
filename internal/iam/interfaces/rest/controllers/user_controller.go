@@ -7,6 +7,7 @@ import (
 	"finanzas-backend/internal/iam/domain/model/commands"
 	"finanzas-backend/internal/iam/domain/model/queries"
 	"finanzas-backend/internal/iam/domain/model/entities"
+	"finanzas-backend/internal/iam/domain/model/valueobjects"
 	"finanzas-backend/internal/iam/domain/services"
 	"finanzas-backend/internal/iam/interfaces/rest/resources"
 )
@@ -113,6 +114,66 @@ func (c *UserController) Login(ctx *gin.Context) {
 		Token: token,
 		User:  c.transformUserToResource(user),
 	}
+	ctx.JSON(http.StatusOK, response)
+}
+
+// UpdateProfile godoc
+// @Summary Update user profile
+// @Description Update authenticated user's email and/or password
+// @Tags IAM
+// @Accept json
+// @Produce json
+// @Param request body resources.UpdateUserResource true "Update user request"
+// @Success 200 {object} resources.UserResource
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 409 {object} map[string]string
+// @Security BearerAuth
+// @Router /api/v1/iam/profile [put]
+func (c *UserController) UpdateProfile(ctx *gin.Context) {
+	// Get user_id from context (set by JWT middleware)
+	userIDValue, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	userID, err := valueobjects.NewUserIDFromString(userIDValue.(string))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var req resources.UpdateUserResource
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	cmd, err := commands.NewUpdateUserCommand(userID, req.Email, req.Password)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := c.userCommandService.HandleUpdate(ctx.Request.Context(), cmd); err != nil {
+		if err.Error() == "email already in use by another user" {
+			ctx.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Retrieve updated user
+	query, _ := queries.NewFindUserByIDQuery(userID.String())
+	user, err := c.userQueryService.HandleFindByID(ctx.Request.Context(), query)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve updated user"})
+		return
+	}
+
+	response := c.transformUserToResource(user)
 	ctx.JSON(http.StatusOK, response)
 }
 

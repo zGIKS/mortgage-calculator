@@ -17,12 +17,12 @@ import (
 	"finanzas-backend/internal/shared/infrastructure/persistence"
 
 	// IAM
-	iamACL "finanzas-backend/internal/iam/interfaces/acl"
 	iamACLImpl "finanzas-backend/internal/iam/application/acl"
 	iamCommandServices "finanzas-backend/internal/iam/application/commandservices"
 	iamQueryServices "finanzas-backend/internal/iam/application/queryservices"
-	iamSecurity "finanzas-backend/internal/iam/infrastructure/security"
 	iamRepos "finanzas-backend/internal/iam/infrastructure/persistence/repositories"
+	iamSecurity "finanzas-backend/internal/iam/infrastructure/security"
+	iamACL "finanzas-backend/internal/iam/interfaces/acl"
 	iamControllers "finanzas-backend/internal/iam/interfaces/rest/controllers"
 
 	// Mortgage
@@ -76,10 +76,10 @@ func main() {
 	swaggerURL := fmt.Sprintf("http://%s/swagger/index.html", serverAddr)
 
 	fmt.Println("=====================================")
-	fmt.Println("🚀 Server starting...")
+	fmt.Println("Server starting...")
 	fmt.Println("=====================================")
-	fmt.Printf("📍 Server: http://%s\n", serverAddr)
-	fmt.Printf("📚 Swagger UI: %s\n", swaggerURL)
+	fmt.Printf("Server: http://%s\n", serverAddr)
+	fmt.Printf("Swagger UI: %s\n", swaggerURL)
 	fmt.Println("=====================================")
 
 	if err := router.Run(":" + cfg.Server.Port); err != nil {
@@ -106,6 +106,12 @@ func setupIAMContext(router *gin.Engine, db *gorm.DB, cfg *config.Config) iamACL
 	// ACL Facade (expuesto a otros bounded contexts)
 	iamFacade := iamACLImpl.NewIAMContextFacade(jwtService, userRepo)
 
+	// External Services (ACL for own middleware)
+	externalAuthService := mortgageACL.NewExternalAuthenticationService(iamFacade)
+
+	// Middleware
+	authMiddleware := mortgageMiddleware.JWTAuthMiddleware(externalAuthService)
+
 	// Controllers
 	userController := iamControllers.NewUserController(userCommandService, userQueryService, authService)
 
@@ -114,6 +120,9 @@ func setupIAMContext(router *gin.Engine, db *gorm.DB, cfg *config.Config) iamACL
 	{
 		iamGroup.POST("/register", userController.Register)
 		iamGroup.POST("/login", userController.Login)
+
+		// Protected routes
+		iamGroup.PUT("/profile", authMiddleware, userController.UpdateProfile)
 	}
 
 	return iamFacade
@@ -142,6 +151,8 @@ func setupMortgageContext(router *gin.Engine, db *gorm.DB, iamFacade iamACL.IAMC
 	{
 		mortgageGroup.POST("/calculate", mortgageController.CalculateMortgage)
 		mortgageGroup.GET("/:id", mortgageController.GetMortgageByID)
+		mortgageGroup.PUT("/:id", mortgageController.UpdateMortgage)
+		mortgageGroup.DELETE("/:id", mortgageController.DeleteMortgage)
 		mortgageGroup.GET("/history", mortgageController.GetMortgageHistory)
 	}
 }

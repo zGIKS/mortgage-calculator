@@ -49,3 +49,13 @@ func (u *User) SetID(id valueobjects.UserID) {
 func (u *User) VerifyPassword(plainPassword string) bool {
 	return u.password.Matches(plainPassword)
 }
+
+func (u *User) UpdateEmail(email valueobjects.Email) {
+	u.email = email
+	u.updatedAt = time.Now()
+}
+
+func (u *User) UpdatePassword(password valueobjects.Password) {
+	u.password = password
+	u.updatedAt = time.Now()
+}

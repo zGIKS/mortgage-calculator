@@ -55,3 +55,44 @@ func (s *userCommandServiceImpl) HandleRegister(ctx context.Context, cmd command
 	userID := user.ID()
 	return &userID, nil
 }
+
+func (s *userCommandServiceImpl) HandleUpdate(ctx context.Context, cmd *commands.UpdateUserCommand) error {
+	// Find existing user
+	user, err := s.userRepo.FindByID(ctx, cmd.UserID())
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return errors.New("user not found")
+	}
+
+	// Update email if provided
+	if cmd.Email() != nil {
+		// Check if new email is already in use by another user
+		existingUser, err := s.userRepo.FindByEmail(ctx, *cmd.Email())
+		if err != nil {
+			return err
+		}
+		if existingUser != nil && existingUser.ID().Value() != user.ID().Value() {
+			return errors.New("email already in use by another user")
+		}
+
+		email, err := valueobjects.NewEmail(*cmd.Email())
+		if err != nil {
+			return err
+		}
+		user.UpdateEmail(email)
+	}
+
+	// Update password if provided
+	if cmd.Password() != nil {
+		password, err := valueobjects.NewPassword(*cmd.Password())
+		if err != nil {
+			return err
+		}
+		user.UpdatePassword(password)
+	}
+
+	// Update in repository
+	return s.userRepo.Update(ctx, user)
+}

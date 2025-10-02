@@ -9,7 +9,11 @@ type FindUserByIDQuery struct {
 	userID valueobjects.UserID
 }
 
-func NewFindUserByIDQuery(userID valueobjects.UserID) (FindUserByIDQuery, error) {
+func NewFindUserByIDQuery(userIDStr string) (FindUserByIDQuery, error) {
+	userID, err := valueobjects.NewUserIDFromString(userIDStr)
+	if err != nil {
+		return FindUserByIDQuery{}, err
+	}
 	if userID.IsZero() {
 		return FindUserByIDQuery{}, errors.New("user ID cannot be zero")
 	}
