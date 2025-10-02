@@ -8,4 +8,6 @@ import (
 
 type MortgageCommandService interface {
 	HandleCalculateMortgage(ctx context.Context, cmd *commands.CalculateMortgageCommand) (*entities.Mortgage, error)
+	HandleUpdateMortgage(ctx context.Context, cmd *commands.UpdateMortgageCommand) (*entities.Mortgage, error)
+	HandleDeleteMortgage(ctx context.Context, cmd *commands.DeleteMortgageCommand) error
 }

@@ -2,28 +2,41 @@ package valueobjects
 
 import (
 	"errors"
-	"fmt"
+
+	"github.com/google/uuid"
 )
 
 type UserID struct {
-	value uint64 `json:"value" gorm:"column:user_id"`
+	value uuid.UUID `json:"value" gorm:"type:uuid;column:user_id"`
 }
 
-func NewUserID(value uint64) (UserID, error) {
-	if value == 0 {
-		return UserID{}, errors.New("user ID cannot be zero")
+func NewUserID(value uuid.UUID) (UserID, error) {
+	if value == uuid.Nil {
+		return UserID{}, errors.New("user ID cannot be nil")
 	}
 	return UserID{value: value}, nil
 }
 
-func (u UserID) Value() uint64 {
+func NewUserIDFromString(value string) (UserID, error) {
+	parsedUUID, err := uuid.Parse(value)
+	if err != nil {
+		return UserID{}, errors.New("invalid UUID format")
+	}
+	return NewUserID(parsedUUID)
+}
+
+func GenerateUserID() UserID {
+	return UserID{value: uuid.New()}
+}
+
+func (u UserID) Value() uuid.UUID {
 	return u.value
 }
 
 func (u UserID) String() string {
-	return fmt.Sprintf("%d", u.value)
+	return u.value.String()
 }
 
 func (u UserID) IsZero() bool {
-	return u.value == 0
+	return u.value == uuid.Nil
 }

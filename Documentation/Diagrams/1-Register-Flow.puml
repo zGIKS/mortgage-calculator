@@ -1,0 +1,64 @@
+@startuml Registro de Usuario - Sign Up
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam handwritten false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title Diagrama de Flujo - Registro de Usuario (Sign Up)\nEndpoint: POST /api/v1/iam/register
+
+start
+
+:Usuario envía datos de registro\n(email, password, full_name);
+
+:Validar formato del request\n(binding JSON);
+
+if (¿Datos válidos?) then (NO)
+  :Retornar error 400\nBad Request;
+  stop
+else (SÍ)
+endif
+
+:Crear comando\nRegisterUserCommand;
+
+if (¿Email válido?) then (NO)
+  :Retornar error 400\n"Invalid email format";
+  stop
+else (SÍ)
+endif
+
+if (¿Password válido?\n(mínimo 6 caracteres)) then (NO)
+  :Retornar error 400\n"Password must be at least 6 characters";
+  stop
+else (SÍ)
+endif
+
+:Verificar si email ya existe\nen la base de datos;
+
+if (¿Email existe?) then (SÍ)
+  :Retornar error 409\nConflict\n"User with this email already exists";
+  stop
+else (NO)
+endif
+
+:Crear value objects:\n- Email\n- Password (hash con bcrypt);
+
+:Crear entidad User\ncon ID generado (UUID);
+
+:Guardar en base de datos\n(tabla users);
+
+if (¿Guardado exitoso?) then (NO)
+  :Retornar error 500\nInternal Server Error;
+  stop
+else (SÍ)
+endif
+
+:Consultar usuario creado\npor email;
+
+:Transformar entidad\na UserResource;
+
+:Retornar respuesta 201\nCreated con datos del usuario;
+
+stop
+
+@enduml

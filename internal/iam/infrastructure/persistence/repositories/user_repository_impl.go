@@ -22,7 +22,8 @@ func (r *userRepositoryImpl) Save(ctx context.Context, user *entities.User) erro
 	model := models.FromEntity(user)
 
 	if user.ID().IsZero() {
-		// Create
+		// Create - Generate new UUID
+		model.ID = valueobjects.GenerateUserID().Value()
 		if err := r.db.WithContext(ctx).Create(model).Error; err != nil {
 			return err
 		}
@@ -38,11 +39,29 @@ func (r *userRepositoryImpl) Save(ctx context.Context, user *entities.User) erro
 	return nil
 }
 
-func (r *userRepositoryImpl) FindByID(ctx context.Context, id valueobjects.UserID) (*entities.User, error) {
-	return r.FindByIDValue(ctx, id.Value())
+func (r *userRepositoryImpl) Update(ctx context.Context, user *entities.User) error {
+	model := models.FromEntity(user)
+
+	result := r.db.WithContext(ctx).Model(&models.UserModel{}).
+		Where("id = ?", user.ID().Value()).
+		Updates(model)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return errors.New("user not found")
+	}
+
+	return nil
 }
 
-func (r *userRepositoryImpl) FindByIDValue(ctx context.Context, id uint64) (*entities.User, error) {
+func (r *userRepositoryImpl) FindByID(ctx context.Context, id valueobjects.UserID) (*entities.User, error) {
+	return r.FindByIDValue(ctx, id.String())
+}
+
+func (r *userRepositoryImpl) FindByIDValue(ctx context.Context, id string) (*entities.User, error) {
 	var model models.UserModel
 	if err := r.db.WithContext(ctx).Where("id = ?", id).First(&model).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

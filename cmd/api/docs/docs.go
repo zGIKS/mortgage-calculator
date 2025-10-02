@@ -67,6 +67,72 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/iam/profile": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update authenticated user's email and/or password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "IAM"
+                ],
+                "summary": "Update user profile",
+                "parameters": [
+                    {
+                        "description": "Update user request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/resources.UpdateUserResource"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resources.UserResource"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/iam/register": {
             "post": {
                 "description": "Register a new user with email, password, and full name",
@@ -192,7 +258,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get mortgage calculation history for a user",
+                "description": "Get mortgage calculation history for authenticated user",
                 "consumes": [
                     "application/json"
                 ],
@@ -204,14 +270,6 @@ const docTemplate = `{
                 ],
                 "summary": "Get mortgage calculation history",
                 "parameters": [
-                    {
-                        "type": "integer",
-                        "format": "int64",
-                        "description": "User ID",
-                        "name": "user_id",
-                        "in": "query",
-                        "required": true
-                    },
                     {
                         "type": "integer",
                         "default": 50,
@@ -321,6 +379,147 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update an existing mortgage calculation. This will recalculate all values.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Mortgage"
+                ],
+                "summary": "Update mortgage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Mortgage ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Mortgage update request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/resources.UpdateMortgageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resources.MortgageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a mortgage calculation by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Mortgage"
+                ],
+                "summary": "Delete mortgage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Mortgage ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
             }
         }
     },
@@ -335,8 +534,7 @@ const docTemplate = `{
                 "loan_amount",
                 "property_price",
                 "rate_type",
-                "term_months",
-                "user_id"
+                "term_months"
             ],
             "properties": {
                 "bono_techo_propio": {
@@ -388,9 +586,6 @@ const docTemplate = `{
                     ]
                 },
                 "term_months": {
-                    "type": "integer"
-                },
-                "user_id": {
                     "type": "integer"
                 }
             }
@@ -495,7 +690,7 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "user_id": {
-                    "type": "integer"
+                    "type": "string"
                 }
             }
         },
@@ -527,7 +722,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "user_id": {
-                    "type": "integer"
+                    "type": "string"
                 }
             }
         },
@@ -578,6 +773,76 @@ const docTemplate = `{
                 }
             }
         },
+        "resources.UpdateMortgageRequest": {
+            "type": "object",
+            "properties": {
+                "bono_techo_propio": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "currency": {
+                    "type": "string",
+                    "enum": [
+                        "PEN",
+                        "USD"
+                    ]
+                },
+                "down_payment": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "grace_period_months": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "grace_period_type": {
+                    "type": "string",
+                    "enum": [
+                        "NONE",
+                        "TOTAL",
+                        "PARTIAL"
+                    ]
+                },
+                "interest_rate": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "loan_amount": {
+                    "type": "number"
+                },
+                "npv_discount_rate": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "property_price": {
+                    "type": "number"
+                },
+                "rate_type": {
+                    "type": "string",
+                    "enum": [
+                        "NOMINAL",
+                        "EFFECTIVE"
+                    ]
+                },
+                "term_months": {
+                    "type": "integer"
+                }
+            }
+        },
+        "resources.UpdateUserResource": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "newemail@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "example": "newpassword123"
+                }
+            }
+        },
         "resources.UserResource": {
             "type": "object",
             "properties": {
@@ -594,8 +859,8 @@ const docTemplate = `{
                     "example": "John Doe"
                 },
                 "id": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
                 }
             }
         }

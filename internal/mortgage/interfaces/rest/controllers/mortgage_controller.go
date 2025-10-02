@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"finanzas-backend/internal/mortgage/domain/model/commands"
 	"finanzas-backend/internal/mortgage/domain/model/queries"
+	"finanzas-backend/internal/mortgage/domain/model/valueobjects"
 	"finanzas-backend/internal/mortgage/domain/services"
 	"finanzas-backend/internal/mortgage/interfaces/rest/resources"
 )
@@ -46,8 +47,17 @@ func (c *MortgageController) CalculateMortgage(ctx *gin.Context) {
 		return
 	}
 
+	// Obtener user_id del contexto (guardado por el middleware JWT)
+	userIDValue, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	userID := userIDValue.(string)
+
 	cmd, err := commands.NewCalculateMortgageCommand(
-		req.UserID,
+		userID,
 		req.PropertyPrice,
 		req.DownPayment,
 		req.LoanAmount,
@@ -114,11 +124,10 @@ func (c *MortgageController) GetMortgageByID(ctx *gin.Context) {
 
 // GetMortgageHistory godoc
 // @Summary Get mortgage calculation history
-// @Description Get mortgage calculation history for a user
+// @Description Get mortgage calculation history for authenticated user
 // @Tags Mortgage
 // @Accept json
 // @Produce json
-// @Param user_id query uint64 true "User ID"
 // @Param limit query int false "Limit" default(50)
 // @Param offset query int false "Offset" default(0)
 // @Success 200 {array} resources.MortgageSummaryResource
@@ -127,17 +136,14 @@ func (c *MortgageController) GetMortgageByID(ctx *gin.Context) {
 // @Security BearerAuth
 // @Router /api/v1/mortgage/history [get]
 func (c *MortgageController) GetMortgageHistory(ctx *gin.Context) {
-	userIDStr := ctx.Query("user_id")
-	if userIDStr == "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
+	// Obtener user_id del contexto (guardado por el middleware JWT)
+	userIDValue, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
 		return
 	}
 
-	userID, err := strconv.ParseUint(userIDStr, 10, 64)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid user_id"})
-		return
-	}
+	userID := userIDValue.(string)
 
 	query, err := queries.NewGetMortgageHistoryQuery(userID)
 	if err != nil {
@@ -170,4 +176,130 @@ func (c *MortgageController) GetMortgageHistory(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, response)
+}
+
+// UpdateMortgage godoc
+// @Summary Update mortgage
+// @Description Update an existing mortgage calculation. This will recalculate all values.
+// @Tags Mortgage
+// @Accept json
+// @Produce json
+// @Param id path uint64 true "Mortgage ID"
+// @Param request body resources.UpdateMortgageRequest true "Mortgage update request"
+// @Success 200 {object} resources.MortgageResponse
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Security BearerAuth
+// @Router /api/v1/mortgage/{id} [put]
+func (c *MortgageController) UpdateMortgage(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid mortgage ID"})
+		return
+	}
+
+	mortgageID, err := valueobjects.NewMortgageID(id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var req resources.UpdateMortgageRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	cmd, err := commands.NewUpdateMortgageCommand(
+		mortgageID,
+		req.PropertyPrice,
+		req.DownPayment,
+		req.LoanAmount,
+		req.BonoTechoPropio,
+		req.InterestRate,
+		req.RateType,
+		req.TermMonths,
+		req.GracePeriodMonths,
+		req.GracePeriodType,
+		req.Currency,
+		req.NPVDiscountRate,
+	)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	mortgage, err := c.commandService.HandleUpdateMortgage(ctx.Request.Context(), cmd)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	response := resources.TransformToMortgageResponse(mortgage)
+	ctx.JSON(http.StatusOK, response)
+}
+
+// DeleteMortgage godoc
+// @Summary Delete mortgage
+// @Description Delete a mortgage calculation by ID
+// @Tags Mortgage
+// @Accept json
+// @Produce json
+// @Param id path uint64 true "Mortgage ID"
+// @Success 204
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Security BearerAuth
+// @Router /api/v1/mortgage/{id} [delete]
+func (c *MortgageController) DeleteMortgage(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid mortgage ID"})
+		return
+	}
+
+	mortgageID, err := valueobjects.NewMortgageID(id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Obtener user_id del contexto (guardado por el middleware JWT)
+	userIDValue, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	userID, err := valueobjects.NewUserID(userIDValue.(string))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	cmd, err := commands.NewDeleteMortgageCommand(mortgageID, userID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := c.commandService.HandleDeleteMortgage(ctx.Request.Context(), cmd); err != nil {
+		if err.Error() == "unauthorized access to mortgage" {
+			ctx.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			return
+		}
+		if err.Error() == "mortgage not found" {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
 }

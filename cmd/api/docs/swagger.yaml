@@ -39,8 +39,6 @@ definitions:
         type: string
       term_months:
         type: integer
-      user_id:
-        type: integer
     required:
     - currency
     - down_payment
@@ -50,7 +48,6 @@ definitions:
     - property_price
     - rate_type
     - term_months
-    - user_id
     type: object
   resources.LoginResource:
     properties:
@@ -120,7 +117,7 @@ definitions:
       total_paid:
         type: number
       user_id:
-        type: integer
+        type: string
     type: object
   resources.MortgageSummaryResource:
     properties:
@@ -141,7 +138,7 @@ definitions:
       term_months:
         type: integer
       user_id:
-        type: integer
+        type: string
     type: object
   resources.PaymentScheduleItemResource:
     properties:
@@ -176,6 +173,56 @@ definitions:
     - full_name
     - password
     type: object
+  resources.UpdateMortgageRequest:
+    properties:
+      bono_techo_propio:
+        minimum: 0
+        type: number
+      currency:
+        enum:
+        - PEN
+        - USD
+        type: string
+      down_payment:
+        minimum: 0
+        type: number
+      grace_period_months:
+        minimum: 0
+        type: integer
+      grace_period_type:
+        enum:
+        - NONE
+        - TOTAL
+        - PARTIAL
+        type: string
+      interest_rate:
+        minimum: 0
+        type: number
+      loan_amount:
+        type: number
+      npv_discount_rate:
+        minimum: 0
+        type: number
+      property_price:
+        type: number
+      rate_type:
+        enum:
+        - NOMINAL
+        - EFFECTIVE
+        type: string
+      term_months:
+        type: integer
+    type: object
+  resources.UpdateUserResource:
+    properties:
+      email:
+        example: newemail@example.com
+        type: string
+      password:
+        example: newpassword123
+        minLength: 6
+        type: string
+    type: object
   resources.UserResource:
     properties:
       created_at:
@@ -188,8 +235,8 @@ definitions:
         example: John Doe
         type: string
       id:
-        example: 1
-        type: integer
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
     type: object
 host: localhost:8080
 info:
@@ -232,6 +279,48 @@ paths:
       summary: User login
       tags:
       - IAM
+  /api/v1/iam/profile:
+    put:
+      consumes:
+      - application/json
+      description: Update authenticated user's email and/or password
+      parameters:
+      - description: Update user request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/resources.UpdateUserResource'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/resources.UserResource'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - IAM
   /api/v1/iam/register:
     post:
       consumes:
@@ -267,6 +356,51 @@ paths:
       tags:
       - IAM
   /api/v1/mortgage/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a mortgage calculation by ID
+      parameters:
+      - description: Mortgage ID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete mortgage
+      tags:
+      - Mortgage
     get:
       consumes:
       - application/json
@@ -306,6 +440,54 @@ paths:
       security:
       - BearerAuth: []
       summary: Get mortgage by ID
+      tags:
+      - Mortgage
+    put:
+      consumes:
+      - application/json
+      description: Update an existing mortgage calculation. This will recalculate
+        all values.
+      parameters:
+      - description: Mortgage ID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Mortgage update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/resources.UpdateMortgageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/resources.MortgageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update mortgage
       tags:
       - Mortgage
   /api/v1/mortgage/calculate:
@@ -355,14 +537,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get mortgage calculation history for a user
+      description: Get mortgage calculation history for authenticated user
       parameters:
-      - description: User ID
-        format: int64
-        in: query
-        name: user_id
-        required: true
-        type: integer
       - default: 50
         description: Limit
         in: query

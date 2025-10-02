@@ -7,7 +7,6 @@ import (
 
 // CalculateMortgageRequest representa la solicitud para calcular un crédito hipotecario
 type CalculateMortgageRequest struct {
-	UserID            uint64  `json:"user_id" binding:"required"`
 	PropertyPrice     float64 `json:"property_price" binding:"required,gt=0"`
 	DownPayment       float64 `json:"down_payment" binding:"required,gte=0"`
 	LoanAmount        float64 `json:"loan_amount" binding:"required,gt=0"`
@@ -19,6 +18,21 @@ type CalculateMortgageRequest struct {
 	GracePeriodType   string  `json:"grace_period_type" binding:"required,oneof=NONE TOTAL PARTIAL"`
 	Currency          string  `json:"currency" binding:"required,oneof=PEN USD"`
 	NPVDiscountRate   float64 `json:"npv_discount_rate" binding:"gte=0"`
+}
+
+// UpdateMortgageRequest representa la solicitud para actualizar un crédito hipotecario
+type UpdateMortgageRequest struct {
+	PropertyPrice     *float64 `json:"property_price,omitempty" binding:"omitempty,gt=0"`
+	DownPayment       *float64 `json:"down_payment,omitempty" binding:"omitempty,gte=0"`
+	LoanAmount        *float64 `json:"loan_amount,omitempty" binding:"omitempty,gt=0"`
+	BonoTechoPropio   *float64 `json:"bono_techo_propio,omitempty" binding:"omitempty,gte=0"`
+	InterestRate      *float64 `json:"interest_rate,omitempty" binding:"omitempty,gte=0"`
+	RateType          *string  `json:"rate_type,omitempty" binding:"omitempty,oneof=NOMINAL EFFECTIVE"`
+	TermMonths        *int     `json:"term_months,omitempty" binding:"omitempty,gt=0"`
+	GracePeriodMonths *int     `json:"grace_period_months,omitempty" binding:"omitempty,gte=0"`
+	GracePeriodType   *string  `json:"grace_period_type,omitempty" binding:"omitempty,oneof=NONE TOTAL PARTIAL"`
+	Currency          *string  `json:"currency,omitempty" binding:"omitempty,oneof=PEN USD"`
+	NPVDiscountRate   *float64 `json:"npv_discount_rate,omitempty" binding:"omitempty,gte=0"`
 }
 
 // PaymentScheduleItemResource representa un item del cronograma
@@ -34,7 +48,7 @@ type PaymentScheduleItemResource struct {
 // MortgageResponse representa la respuesta completa con todos los cálculos
 type MortgageResponse struct {
 	ID                uint64                        `json:"id"`
-	UserID            uint64                        `json:"user_id"`
+	UserID            string                        `json:"user_id"`
 	PropertyPrice     float64                       `json:"property_price"`
 	DownPayment       float64                       `json:"down_payment"`
 	LoanAmount        float64                       `json:"loan_amount"`
@@ -63,7 +77,7 @@ type MortgageResponse struct {
 // MortgageSummaryResource representa un resumen de hipoteca (para listas)
 type MortgageSummaryResource struct {
 	ID                uint64    `json:"id"`
-	UserID            uint64    `json:"user_id"`
+	UserID            string    `json:"user_id"`
 	PropertyPrice     float64   `json:"property_price"`
 	LoanAmount        float64   `json:"loan_amount"`
 	Currency          string    `json:"currency"`
@@ -91,7 +105,7 @@ func TransformToMortgageResponse(mortgage *entities.Mortgage) MortgageResponse {
 
 	return MortgageResponse{
 		ID:                mortgage.ID().Value(),
-		UserID:            mortgage.UserID().Value(),
+		UserID:            mortgage.UserID().String(),
 		PropertyPrice:     mortgage.PropertyPrice(),
 		DownPayment:       mortgage.DownPayment(),
 		LoanAmount:        mortgage.LoanAmount(),
@@ -119,7 +133,7 @@ func TransformToMortgageResponse(mortgage *entities.Mortgage) MortgageResponse {
 func TransformToMortgageSummary(mortgage *entities.Mortgage) MortgageSummaryResource {
 	return MortgageSummaryResource{
 		ID:               mortgage.ID().Value(),
-		UserID:           mortgage.UserID().Value(),
+		UserID:           mortgage.UserID().String(),
 		PropertyPrice:    mortgage.PropertyPrice(),
 		LoanAmount:       mortgage.LoanAmount(),
 		Currency:         mortgage.Currency().String(),

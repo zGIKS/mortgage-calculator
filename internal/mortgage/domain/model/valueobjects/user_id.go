@@ -1,18 +1,37 @@
 package valueobjects
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/google/uuid"
+)
 
 type UserID struct {
-	value uint64
+	value uuid.UUID
 }
 
-func NewUserID(value uint64) (UserID, error) {
-	if value == 0 {
-		return UserID{}, errors.New("user ID cannot be zero")
+func NewUserID(value string) (UserID, error) {
+	if value == "" {
+		return UserID{}, errors.New("user ID cannot be empty")
+	}
+	parsedUUID, err := uuid.Parse(value)
+	if err != nil {
+		return UserID{}, errors.New("invalid UUID format")
+	}
+	return UserID{value: parsedUUID}, nil
+}
+
+func NewUserIDFromUUID(value uuid.UUID) (UserID, error) {
+	if value == uuid.Nil {
+		return UserID{}, errors.New("user ID cannot be nil")
 	}
 	return UserID{value: value}, nil
 }
 
-func (u UserID) Value() uint64 {
+func (u UserID) Value() uuid.UUID {
 	return u.value
+}
+
+func (u UserID) String() string {
+	return u.value.String()
 }

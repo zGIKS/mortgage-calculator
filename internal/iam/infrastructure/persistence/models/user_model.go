@@ -4,10 +4,12 @@ import (
 	"finanzas-backend/internal/iam/domain/model/entities"
 	"finanzas-backend/internal/iam/domain/model/valueobjects"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type UserModel struct {
-	ID           uint64    `gorm:"primaryKey;autoIncrement;column:id"`
+	ID           uuid.UUID `gorm:"type:uuid;primaryKey;column:id"`
 	Email        string    `gorm:"uniqueIndex;not null;column:email"`
 	PasswordHash string    `gorm:"not null;column:password_hash"`
 	FullName     string    `gorm:"not null;column:full_name"`

@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	iam_acl "finanzas-backend/internal/iam/interfaces/acl"
-	"finanzas-backend/internal/mortgage/domain/model/valueobjects"
 )
 
 // ExternalAuthenticationService - ACL implementation para acceder a IAM desde Mortgage
@@ -20,28 +19,22 @@ func NewExternalAuthenticationService(iamFacade iam_acl.IAMContextFacade) *Exter
 	}
 }
 
-// ValidateTokenAndGetUserID valida un token JWT y retorna el UserID de Mortgage
-func (s *ExternalAuthenticationService) ValidateTokenAndGetUserID(ctx context.Context, token string) (*valueobjects.UserID, error) {
-	// Llamar al facade de IAM para validar el token
-	userIDValue, err := s.iamFacade.ValidateToken(ctx, token)
+// ValidateTokenAndGetUserID valida un token JWT y retorna el UserID de Mortgage como string
+func (s *ExternalAuthenticationService) ValidateTokenAndGetUserID(ctx context.Context, token string) (string, error) {
+	// Llamar al facade de IAM para validar el token (retorna UUID string)
+	userIDString, err := s.iamFacade.ValidateToken(ctx, token)
 	if err != nil {
-		return nil, errors.New("invalid or expired token")
+		return "", errors.New("invalid or expired token")
 	}
 
-	if userIDValue == 0 {
-		return nil, errors.New("invalid user ID from token")
+	if userIDString == "" {
+		return "", errors.New("invalid user ID from token")
 	}
 
-	// Convertir a value object del contexto Mortgage
-	userID, err := valueobjects.NewUserID(userIDValue)
-	if err != nil {
-		return nil, err
-	}
-
-	return &userID, nil
+	return userIDString, nil
 }
 
-// GetUserEmail obtiene el email de un usuario por su ID
-func (s *ExternalAuthenticationService) GetUserEmail(ctx context.Context, userID valueobjects.UserID) (string, error) {
-	return s.iamFacade.GetUserEmailByID(ctx, userID.Value())
+// GetUserEmail obtiene el email de un usuario por su ID (UUID string)
+func (s *ExternalAuthenticationService) GetUserEmail(ctx context.Context, userID string) (string, error) {
+	return s.iamFacade.GetUserEmailByID(ctx, userID)
 }
