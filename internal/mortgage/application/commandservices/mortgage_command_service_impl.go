@@ -225,6 +225,11 @@ func (s *MortgageCommandServiceImpl) HandleUpdateMortgage(
 	}
 
 	if cmd.Currency() != nil {
+		// Validación: Si cambia moneda, DEBE actualizar todos los montos
+		if cmd.PropertyPrice() == nil || cmd.DownPayment() == nil || cmd.LoanAmount() == nil {
+			return nil, errors.New("when changing currency, you must update all monetary amounts (property_price, down_payment, loan_amount)")
+		}
+
 		currency, err := valueobjects.NewCurrency(*cmd.Currency())
 		if err != nil {
 			return nil, err
@@ -252,6 +257,7 @@ func (s *MortgageCommandServiceImpl) HandleUpdateMortgage(
 			mortgage.TCEA(),
 			mortgage.CreatedAt(),
 		)
+		needsRecalculation = true
 	}
 
 	// Recalcular si es necesario

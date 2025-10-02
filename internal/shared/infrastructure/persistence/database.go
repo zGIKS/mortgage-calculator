@@ -45,5 +45,6 @@ func autoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&iamModels.UserModel{},
 		&mortgageModels.MortgageModel{},
+		&mortgageModels.PaymentScheduleItemModel{},
 	)
 }
