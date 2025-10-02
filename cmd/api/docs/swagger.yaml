@@ -238,7 +238,6 @@ definitions:
         example: 123e4567-e89b-12d3-a456-426614174000
         type: string
     type: object
-host: localhost:8080
 info:
   contact: {}
   description: API for IAM and Mortgage (French Method) bounded contexts

@@ -37,7 +37,6 @@ import (
 // @title Finanzas API - MiVivienda Mortgage Calculator
 // @version 1.0
 // @description API for IAM and Mortgage (French Method) bounded contexts
-// @host localhost:8080
 // @BasePath /
 // @securityDefinitions.apikey BearerAuth
 // @in header
@@ -66,8 +65,10 @@ func main() {
 	iamFacade := setupIAMContext(router, db, cfg)
 	setupMortgageContext(router, db, iamFacade)
 
-	// Swagger UI route
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// Swagger UI route con URL dinámica
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler,
+		ginSwagger.URL("/swagger/doc.json"),
+		ginSwagger.DefaultModelsExpandDepth(-1)))
 
 	// Root redirect to Swagger
 	router.GET("/", func(c *gin.Context) {
