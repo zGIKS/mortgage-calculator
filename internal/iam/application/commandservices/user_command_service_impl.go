@@ -93,6 +93,11 @@ func (s *userCommandServiceImpl) HandleUpdate(ctx context.Context, cmd *commands
 		user.UpdatePassword(password)
 	}
 
+	// Update full name if provided
+	if cmd.FullName() != nil {
+		user.UpdateFullName(*cmd.FullName())
+	}
+
 	// Update in repository
 	return s.userRepo.Update(ctx, user)
 }

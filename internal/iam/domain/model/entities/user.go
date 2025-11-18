@@ -35,12 +35,12 @@ func ReconstructUser(id valueobjects.UserID, email valueobjects.Email, password 
 	}
 }
 
-func (u *User) ID() valueobjects.UserID           { return u.id }
-func (u *User) Email() valueobjects.Email         { return u.email }
-func (u *User) Password() valueobjects.Password   { return u.password }
-func (u *User) FullName() string                  { return u.fullName }
-func (u *User) CreatedAt() time.Time              { return u.createdAt }
-func (u *User) UpdatedAt() time.Time              { return u.updatedAt }
+func (u *User) ID() valueobjects.UserID         { return u.id }
+func (u *User) Email() valueobjects.Email       { return u.email }
+func (u *User) Password() valueobjects.Password { return u.password }
+func (u *User) FullName() string                { return u.fullName }
+func (u *User) CreatedAt() time.Time            { return u.createdAt }
+func (u *User) UpdatedAt() time.Time            { return u.updatedAt }
 
 func (u *User) SetID(id valueobjects.UserID) {
 	u.id = id
@@ -57,5 +57,10 @@ func (u *User) UpdateEmail(email valueobjects.Email) {
 
 func (u *User) UpdatePassword(password valueobjects.Password) {
 	u.password = password
+	u.updatedAt = time.Now()
+}
+
+func (u *User) UpdateFullName(fullName string) {
+	u.fullName = fullName
 	u.updatedAt = time.Now()
 }

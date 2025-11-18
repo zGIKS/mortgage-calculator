@@ -28,6 +28,7 @@ type LoginResponseResource struct {
 type UpdateUserResource struct {
 	Email    *string `json:"email,omitempty" example:"newemail@example.com" validate:"omitempty,email"`
 	Password *string `json:"password,omitempty" example:"newpassword123" validate:"omitempty,min=6"`
+	FullName *string `json:"full_name,omitempty" example:"Jane Doe" validate:"omitempty,min=2"`
 }
 
 type ErrorResponse struct {

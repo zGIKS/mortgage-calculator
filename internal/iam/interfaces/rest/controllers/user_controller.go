@@ -3,13 +3,14 @@ package controllers
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"finanzas-backend/internal/iam/domain/model/commands"
-	"finanzas-backend/internal/iam/domain/model/queries"
 	"finanzas-backend/internal/iam/domain/model/entities"
+	"finanzas-backend/internal/iam/domain/model/queries"
 	"finanzas-backend/internal/iam/domain/model/valueobjects"
 	"finanzas-backend/internal/iam/domain/services"
 	"finanzas-backend/internal/iam/interfaces/rest/resources"
+
+	"github.com/gin-gonic/gin"
 )
 
 type UserController struct {
@@ -119,7 +120,7 @@ func (c *UserController) Login(ctx *gin.Context) {
 
 // UpdateProfile godoc
 // @Summary Update user profile
-// @Description Update authenticated user's email and/or password
+// @Description Update authenticated user's email, password, and/or full name
 // @Tags IAM
 // @Accept json
 // @Produce json
@@ -150,7 +151,7 @@ func (c *UserController) UpdateProfile(ctx *gin.Context) {
 		return
 	}
 
-	cmd, err := commands.NewUpdateUserCommand(userID, req.Email, req.Password)
+	cmd, err := commands.NewUpdateUserCommand(userID, req.Email, req.Password, req.FullName)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

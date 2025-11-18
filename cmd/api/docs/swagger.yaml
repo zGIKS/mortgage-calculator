@@ -218,6 +218,10 @@ definitions:
       email:
         example: newemail@example.com
         type: string
+      full_name:
+        example: Jane Doe
+        minLength: 2
+        type: string
       password:
         example: newpassword123
         minLength: 6
@@ -282,7 +286,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: Update authenticated user's email and/or password
+      description: Update authenticated user's email, password, and/or full name
       parameters:
       - description: Update user request
         in: body

@@ -74,7 +74,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update authenticated user's email and/or password",
+                "description": "Update authenticated user's email, password, and/or full name",
                 "consumes": [
                     "application/json"
                 ],
@@ -835,6 +835,11 @@ const docTemplate = `{
                 "email": {
                     "type": "string",
                     "example": "newemail@example.com"
+                },
+                "full_name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "example": "Jane Doe"
                 },
                 "password": {
                     "type": "string",
