@@ -30,6 +30,7 @@ import (
 	mortgageCommandServices "finanzas-backend/internal/mortgage/application/commandservices"
 	mortgageQueryServices "finanzas-backend/internal/mortgage/application/queryservices"
 	mortgageRepos "finanzas-backend/internal/mortgage/infrastructure/persistence/repositories"
+	mortgageSeed "finanzas-backend/internal/mortgage/infrastructure/persistence/seed"
 	mortgageControllers "finanzas-backend/internal/mortgage/interfaces/rest/controllers"
 	mortgageMiddleware "finanzas-backend/internal/mortgage/interfaces/rest/middleware"
 )
@@ -157,10 +158,14 @@ func setupMortgageContext(router *gin.Engine, db *gorm.DB, iamFacade iamACL.IAMC
 	authMiddleware := mortgageMiddleware.JWTAuthMiddleware(externalAuthService)
 
 	// Repositories
+	bankRepo := mortgageRepos.NewBankRepository(db)
+	if err := mortgageSeed.SeedBanks(db); err != nil {
+		log.Printf("failed to seed banks: %v", err)
+	}
 	mortgageRepo := mortgageRepos.NewMortgageRepository(db)
 
 	// Services
-	mortgageCommandService := mortgageCommandServices.NewMortgageCommandService(mortgageRepo)
+	mortgageCommandService := mortgageCommandServices.NewMortgageCommandService(mortgageRepo, bankRepo)
 	mortgageQueryService := mortgageQueryServices.NewMortgageQueryService(mortgageRepo)
 
 	// Controllers

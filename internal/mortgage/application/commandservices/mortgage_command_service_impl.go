@@ -11,14 +11,19 @@ import (
 )
 
 type MortgageCommandServiceImpl struct {
-	repository repositories.MortgageRepository
-	calculator *services.FrenchMethodCalculator
+	repository     repositories.MortgageRepository
+	bankRepository repositories.BankRepository
+	calculator     *services.FrenchMethodCalculator
 }
 
-func NewMortgageCommandService(repository repositories.MortgageRepository) services.MortgageCommandService {
+func NewMortgageCommandService(
+	repository repositories.MortgageRepository,
+	bankRepository repositories.BankRepository,
+) services.MortgageCommandService {
 	return &MortgageCommandServiceImpl{
-		repository: repository,
-		calculator: services.NewFrenchMethodCalculator(),
+		repository:     repository,
+		bankRepository: bankRepository,
+		calculator:     services.NewFrenchMethodCalculator(),
 	}
 }
 
@@ -32,9 +37,29 @@ func (s *MortgageCommandServiceImpl) HandleCalculateMortgage(
 		return nil, err
 	}
 
-	rateType, err := valueobjects.NewRateType(cmd.RateType)
-	if err != nil {
-		return nil, err
+	var bank *entities.Bank
+	if cmd.BankID != nil {
+		bankID, err := valueobjects.NewBankID(*cmd.BankID)
+		if err != nil {
+			return nil, err
+		}
+
+		bank, err = s.bankRepository.FindByID(ctx, bankID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var rateType valueobjects.RateType
+	if bank != nil {
+		rateType = bank.RateType()
+	} else if cmd.RateType != nil {
+		rateType, err = valueobjects.NewRateType(*cmd.RateType)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.New("rate type or bank profile is required")
 	}
 
 	gracePeriodType, err := valueobjects.NewGracePeriodType(cmd.GracePeriodType)
@@ -65,6 +90,18 @@ func (s *MortgageCommandServiceImpl) HandleCalculateMortgage(
 		return nil, err
 	}
 
+	// Attach bank/frequency configuration
+	if bank != nil {
+		mortgage.SetBank(bank)
+	} else {
+		if cmd.PaymentFrequencyDays != nil {
+			mortgage.SetPaymentFrequencyDays(*cmd.PaymentFrequencyDays)
+		}
+		if cmd.DaysInYear != nil {
+			mortgage.SetDaysInYear(*cmd.DaysInYear)
+		}
+	}
+
 	// Calcular cronograma usando método francés
 	if err := s.calculator.Calculate(mortgage); err != nil {
 		return nil, err
@@ -87,7 +124,7 @@ func (s *MortgageCommandServiceImpl) HandleCalculateMortgage(
 	mortgage.SetIRR(irr)
 
 	// Calcular TCEA
-	tcea := s.calculator.CalculateTCEA(irr)
+	tcea := s.calculator.CalculateTCEA(irr, mortgage.PeriodsPerYear())
 	mortgage.SetTCEA(tcea)
 
 	// Guardar en repositorio
@@ -126,6 +163,10 @@ func (s *MortgageCommandServiceImpl) HandleUpdateMortgage(
 			mortgage.GracePeriodMonths(),
 			mortgage.GracePeriodType(),
 			mortgage.Currency(),
+			mortgage.BankID(),
+			mortgage.BankName(),
+			mortgage.PaymentFrequencyDays(),
+			mortgage.DaysInYear(),
 			mortgage.PrincipalFinanced(),
 			mortgage.PeriodicRate(),
 			mortgage.FixedInstallment(),
@@ -172,6 +213,10 @@ func (s *MortgageCommandServiceImpl) HandleUpdateMortgage(
 			mortgage.GracePeriodMonths(),
 			mortgage.GracePeriodType(),
 			mortgage.Currency(),
+			mortgage.BankID(),
+			mortgage.BankName(),
+			mortgage.PaymentFrequencyDays(),
+			mortgage.DaysInYear(),
 			mortgage.PrincipalFinanced(),
 			mortgage.PeriodicRate(),
 			mortgage.FixedInstallment(),
@@ -182,6 +227,29 @@ func (s *MortgageCommandServiceImpl) HandleUpdateMortgage(
 			mortgage.TCEA(),
 			mortgage.CreatedAt(),
 		)
+		needsRecalculation = true
+	}
+
+	if cmd.BankID() != nil {
+		bankID, err := valueobjects.NewBankID(*cmd.BankID())
+		if err != nil {
+			return nil, err
+		}
+		bank, err := s.bankRepository.FindByID(ctx, bankID)
+		if err != nil {
+			return nil, err
+		}
+		mortgage.SetBank(bank)
+		needsRecalculation = true
+	}
+
+	if cmd.PaymentFrequencyDays() != nil {
+		mortgage.SetPaymentFrequencyDays(*cmd.PaymentFrequencyDays())
+		needsRecalculation = true
+	}
+
+	if cmd.DaysInYear() != nil {
+		mortgage.SetDaysInYear(*cmd.DaysInYear())
 		needsRecalculation = true
 	}
 
@@ -211,6 +279,10 @@ func (s *MortgageCommandServiceImpl) HandleUpdateMortgage(
 			mortgage.GracePeriodMonths(),
 			gracePeriodType,
 			mortgage.Currency(),
+			mortgage.BankID(),
+			mortgage.BankName(),
+			mortgage.PaymentFrequencyDays(),
+			mortgage.DaysInYear(),
 			mortgage.PrincipalFinanced(),
 			mortgage.PeriodicRate(),
 			mortgage.FixedInstallment(),
@@ -247,6 +319,10 @@ func (s *MortgageCommandServiceImpl) HandleUpdateMortgage(
 			mortgage.GracePeriodMonths(),
 			mortgage.GracePeriodType(),
 			currency,
+			mortgage.BankID(),
+			mortgage.BankName(),
+			mortgage.PaymentFrequencyDays(),
+			mortgage.DaysInYear(),
 			mortgage.PrincipalFinanced(),
 			mortgage.PeriodicRate(),
 			mortgage.FixedInstallment(),
@@ -282,6 +358,10 @@ func (s *MortgageCommandServiceImpl) HandleUpdateMortgage(
 
 		// Mantener el ID original
 		updatedMortgage.SetID(mortgage.ID())
+		updatedMortgage.SetRateType(mortgage.RateType())
+		updatedMortgage.SetPaymentFrequencyDays(mortgage.PaymentFrequencyDays())
+		updatedMortgage.SetDaysInYear(mortgage.DaysInYear())
+		updatedMortgage.SetBankReference(mortgage.BankID(), mortgage.BankName())
 
 		// Recalcular
 		if err := s.calculator.Calculate(updatedMortgage); err != nil {
@@ -306,7 +386,7 @@ func (s *MortgageCommandServiceImpl) HandleUpdateMortgage(
 		updatedMortgage.SetIRR(irr)
 
 		// Calcular TCEA
-		tcea := s.calculator.CalculateTCEA(irr)
+		tcea := s.calculator.CalculateTCEA(irr, updatedMortgage.PeriodsPerYear())
 		updatedMortgage.SetTCEA(tcea)
 
 		mortgage = updatedMortgage

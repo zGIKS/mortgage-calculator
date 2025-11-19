@@ -4,12 +4,12 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"finanzas-backend/internal/mortgage/domain/model/commands"
 	"finanzas-backend/internal/mortgage/domain/model/queries"
 	"finanzas-backend/internal/mortgage/domain/model/valueobjects"
 	"finanzas-backend/internal/mortgage/domain/services"
 	"finanzas-backend/internal/mortgage/interfaces/rest/resources"
+	"github.com/gin-gonic/gin"
 )
 
 type MortgageController struct {
@@ -64,6 +64,9 @@ func (c *MortgageController) CalculateMortgage(ctx *gin.Context) {
 		req.BonoTechoPropio,
 		req.InterestRate,
 		req.RateType,
+		req.BankID,
+		req.PaymentFrequencyDays,
+		req.DaysInYear,
 		req.TermMonths,
 		req.GracePeriodMonths,
 		req.GracePeriodType,
@@ -220,6 +223,9 @@ func (c *MortgageController) UpdateMortgage(ctx *gin.Context) {
 		req.BonoTechoPropio,
 		req.InterestRate,
 		req.RateType,
+		req.BankID,
+		req.PaymentFrequencyDays,
+		req.DaysInYear,
 		req.TermMonths,
 		req.GracePeriodMonths,
 		req.GracePeriodType,

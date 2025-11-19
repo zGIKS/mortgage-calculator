@@ -533,10 +533,14 @@ const docTemplate = `{
                 "interest_rate",
                 "loan_amount",
                 "property_price",
-                "rate_type",
                 "term_months"
             ],
             "properties": {
+                "bank_id": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1
+                },
                 "bono_techo_propio": {
                     "type": "number",
                     "minimum": 0
@@ -547,6 +551,9 @@ const docTemplate = `{
                         "PEN",
                         "USD"
                     ]
+                },
+                "days_in_year": {
+                    "type": "integer"
                 },
                 "down_payment": {
                     "type": "number",
@@ -574,6 +581,9 @@ const docTemplate = `{
                 "npv_discount_rate": {
                     "type": "number",
                     "minimum": 0
+                },
+                "payment_frequency_days": {
+                    "type": "integer"
                 },
                 "property_price": {
                     "type": "number"
@@ -622,6 +632,12 @@ const docTemplate = `{
         "resources.MortgageResponse": {
             "type": "object",
             "properties": {
+                "bank_id": {
+                    "type": "string"
+                },
+                "bank_name": {
+                    "type": "string"
+                },
                 "bono_techo_propio": {
                     "type": "number"
                 },
@@ -630,6 +646,9 @@ const docTemplate = `{
                 },
                 "currency": {
                     "type": "string"
+                },
+                "days_in_year": {
+                    "type": "integer"
                 },
                 "down_payment": {
                     "type": "number"
@@ -657,6 +676,9 @@ const docTemplate = `{
                 },
                 "npv": {
                     "type": "number"
+                },
+                "payment_frequency_days": {
+                    "type": "integer"
                 },
                 "payment_schedule": {
                     "type": "array",
@@ -697,6 +719,12 @@ const docTemplate = `{
         "resources.MortgageSummaryResource": {
             "type": "object",
             "properties": {
+                "bank_id": {
+                    "type": "string"
+                },
+                "bank_name": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -776,6 +804,11 @@ const docTemplate = `{
         "resources.UpdateMortgageRequest": {
             "type": "object",
             "properties": {
+                "bank_id": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1
+                },
                 "bono_techo_propio": {
                     "type": "number",
                     "minimum": 0
@@ -786,6 +819,9 @@ const docTemplate = `{
                         "PEN",
                         "USD"
                     ]
+                },
+                "days_in_year": {
+                    "type": "integer"
                 },
                 "down_payment": {
                     "type": "number",
@@ -813,6 +849,9 @@ const docTemplate = `{
                 "npv_discount_rate": {
                     "type": "number",
                     "minimum": 0
+                },
+                "payment_frequency_days": {
+                    "type": "integer"
                 },
                 "property_price": {
                     "type": "number"

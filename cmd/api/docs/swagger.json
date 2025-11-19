@@ -526,10 +526,14 @@
                 "interest_rate",
                 "loan_amount",
                 "property_price",
-                "rate_type",
                 "term_months"
             ],
             "properties": {
+                "bank_id": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1
+                },
                 "bono_techo_propio": {
                     "type": "number",
                     "minimum": 0
@@ -540,6 +544,9 @@
                         "PEN",
                         "USD"
                     ]
+                },
+                "days_in_year": {
+                    "type": "integer"
                 },
                 "down_payment": {
                     "type": "number",
@@ -567,6 +574,9 @@
                 "npv_discount_rate": {
                     "type": "number",
                     "minimum": 0
+                },
+                "payment_frequency_days": {
+                    "type": "integer"
                 },
                 "property_price": {
                     "type": "number"
@@ -615,6 +625,12 @@
         "resources.MortgageResponse": {
             "type": "object",
             "properties": {
+                "bank_id": {
+                    "type": "string"
+                },
+                "bank_name": {
+                    "type": "string"
+                },
                 "bono_techo_propio": {
                     "type": "number"
                 },
@@ -623,6 +639,9 @@
                 },
                 "currency": {
                     "type": "string"
+                },
+                "days_in_year": {
+                    "type": "integer"
                 },
                 "down_payment": {
                     "type": "number"
@@ -650,6 +669,9 @@
                 },
                 "npv": {
                     "type": "number"
+                },
+                "payment_frequency_days": {
+                    "type": "integer"
                 },
                 "payment_schedule": {
                     "type": "array",
@@ -690,6 +712,12 @@
         "resources.MortgageSummaryResource": {
             "type": "object",
             "properties": {
+                "bank_id": {
+                    "type": "string"
+                },
+                "bank_name": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -769,6 +797,11 @@
         "resources.UpdateMortgageRequest": {
             "type": "object",
             "properties": {
+                "bank_id": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1
+                },
                 "bono_techo_propio": {
                     "type": "number",
                     "minimum": 0
@@ -779,6 +812,9 @@
                         "PEN",
                         "USD"
                     ]
+                },
+                "days_in_year": {
+                    "type": "integer"
                 },
                 "down_payment": {
                     "type": "number",
@@ -806,6 +842,9 @@
                 "npv_discount_rate": {
                     "type": "number",
                     "minimum": 0
+                },
+                "payment_frequency_days": {
+                    "type": "integer"
                 },
                 "property_price": {
                     "type": "number"

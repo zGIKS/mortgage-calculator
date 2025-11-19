@@ -44,6 +44,7 @@ func NewDatabase(cfg *config.Config) (*gorm.DB, error) {
 func autoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&iamModels.UserModel{},
+		&mortgageModels.BankModel{},
 		&mortgageModels.MortgageModel{},
 		&mortgageModels.PaymentScheduleItemModel{},
 	)

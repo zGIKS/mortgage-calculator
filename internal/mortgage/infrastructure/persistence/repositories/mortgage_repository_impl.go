@@ -146,28 +146,39 @@ func (r *MortgageRepositoryImpl) Delete(ctx context.Context, id valueobjects.Mor
 }
 
 func (r *MortgageRepositoryImpl) toModel(mortgage *entities.Mortgage) *models.MortgageModel {
+	var bankID *string
+	bankIDVO := mortgage.BankID()
+	if bankIDVO != nil {
+		value := bankIDVO.String()
+		bankID = &value
+	}
+
 	return &models.MortgageModel{
-		ID:                mortgage.ID().Value(),
-		UserID:            mortgage.UserID().Value(),
-		PropertyPrice:     mortgage.PropertyPrice(),
-		DownPayment:       mortgage.DownPayment(),
-		LoanAmount:        mortgage.LoanAmount(),
-		BonoTechoPropio:   mortgage.BonoTechoPropio(),
-		InterestRate:      mortgage.InterestRate(),
-		RateType:          mortgage.RateType().String(),
-		TermMonths:        mortgage.TermMonths(),
-		GracePeriodMonths: mortgage.GracePeriodMonths(),
-		GracePeriodType:   mortgage.GracePeriodType().String(),
-		Currency:          mortgage.Currency().String(),
-		PrincipalFinanced: mortgage.PrincipalFinanced(),
-		PeriodicRate:      mortgage.PeriodicRate(),
-		FixedInstallment:  mortgage.FixedInstallment(),
-		TotalInterestPaid: mortgage.TotalInterestPaid(),
-		TotalPaid:         mortgage.TotalPaid(),
-		NPV:               mortgage.NPV(),
-		IRR:               mortgage.IRR(),
-		TCEA:              mortgage.TCEA(),
-		CreatedAt:         mortgage.CreatedAt(),
+		ID:                   mortgage.ID().Value(),
+		UserID:               mortgage.UserID().Value(),
+		PropertyPrice:        mortgage.PropertyPrice(),
+		DownPayment:          mortgage.DownPayment(),
+		LoanAmount:           mortgage.LoanAmount(),
+		BonoTechoPropio:      mortgage.BonoTechoPropio(),
+		InterestRate:         mortgage.InterestRate(),
+		RateType:             mortgage.RateType().String(),
+		BankID:               bankID,
+		BankName:             mortgage.BankName(),
+		TermMonths:           mortgage.TermMonths(),
+		GracePeriodMonths:    mortgage.GracePeriodMonths(),
+		GracePeriodType:      mortgage.GracePeriodType().String(),
+		Currency:             mortgage.Currency().String(),
+		PaymentFrequencyDays: mortgage.PaymentFrequencyDays(),
+		DaysInYear:           mortgage.DaysInYear(),
+		PrincipalFinanced:    mortgage.PrincipalFinanced(),
+		PeriodicRate:         mortgage.PeriodicRate(),
+		FixedInstallment:     mortgage.FixedInstallment(),
+		TotalInterestPaid:    mortgage.TotalInterestPaid(),
+		TotalPaid:            mortgage.TotalPaid(),
+		NPV:                  mortgage.NPV(),
+		IRR:                  mortgage.IRR(),
+		TCEA:                 mortgage.TCEA(),
+		CreatedAt:            mortgage.CreatedAt(),
 	}
 }
 
@@ -231,6 +242,15 @@ func (r *MortgageRepositoryImpl) toDomain(model *models.MortgageModel) (*entitie
 		return nil, err
 	}
 
+	var bankID *valueobjects.BankID
+	if model.BankID != nil && *model.BankID != "" {
+		bid, err := valueobjects.NewBankID(*model.BankID)
+		if err != nil {
+			return nil, err
+		}
+		bankID = &bid
+	}
+
 	mortgage := entities.ReconstructMortgage(
 		id,
 		userID,
@@ -244,6 +264,10 @@ func (r *MortgageRepositoryImpl) toDomain(model *models.MortgageModel) (*entitie
 		model.GracePeriodMonths,
 		gracePeriodType,
 		currency,
+		bankID,
+		model.BankName,
+		model.PaymentFrequencyDays,
+		model.DaysInYear,
 		model.PrincipalFinanced,
 		model.PeriodicRate,
 		model.FixedInstallment,

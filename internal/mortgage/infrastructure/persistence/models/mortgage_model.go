@@ -8,18 +8,22 @@ import (
 
 // MortgageModel es el modelo de persistencia para GORM
 type MortgageModel struct {
-	ID                uint64    `gorm:"primaryKey;autoIncrement"`
-	UserID            uuid.UUID `gorm:"type:uuid;not null;index"`
-	PropertyPrice     float64   `gorm:"not null"`
-	DownPayment       float64   `gorm:"not null"`
-	LoanAmount        float64   `gorm:"not null"`
-	BonoTechoPropio   float64   `gorm:"default:0"`
-	InterestRate      float64   `gorm:"not null"`
-	RateType          string    `gorm:"type:varchar(20);not null"`
-	TermMonths        int       `gorm:"not null"`
-	GracePeriodMonths int       `gorm:"default:0"`
-	GracePeriodType   string    `gorm:"type:varchar(20);default:'NONE'"`
-	Currency          string    `gorm:"type:varchar(3);not null"`
+	ID                   uint64    `gorm:"primaryKey;autoIncrement"`
+	UserID               uuid.UUID `gorm:"type:uuid;not null;index"`
+	PropertyPrice        float64   `gorm:"not null"`
+	DownPayment          float64   `gorm:"not null"`
+	LoanAmount           float64   `gorm:"not null"`
+	BonoTechoPropio      float64   `gorm:"default:0"`
+	InterestRate         float64   `gorm:"not null"`
+	RateType             string    `gorm:"type:varchar(20);not null"`
+	BankID               *string   `gorm:"type:varchar(50)"`
+	BankName             string    `gorm:"type:varchar(120)"`
+	TermMonths           int       `gorm:"not null"`
+	GracePeriodMonths    int       `gorm:"default:0"`
+	GracePeriodType      string    `gorm:"type:varchar(20);default:'NONE'"`
+	Currency             string    `gorm:"type:varchar(3);not null"`
+	PaymentFrequencyDays int       `gorm:"not null;default:30"`
+	DaysInYear           int       `gorm:"not null;default:360"`
 
 	// Resultados calculados
 	PrincipalFinanced float64 `gorm:"not null"`

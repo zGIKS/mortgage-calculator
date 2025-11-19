@@ -23,8 +23,9 @@ func (fmc *FrenchMethodCalculator) Calculate(mortgage *entities.Mortgage) error 
 	}
 	mortgage.SetPrincipalFinanced(principalFinanced)
 
-	// 2. Convertir tasa de interés a tasa efectiva mensual (periodicRate)
-	periodicRate, err := fmc.convertToPeriodicRate(mortgage.InterestRate(), mortgage.RateType())
+	// 2. Convertir tasa de interés a tasa efectiva por periodo según la frecuencia
+	periodsPerYear := mortgage.PeriodsPerYear()
+	periodicRate, err := fmc.convertToPeriodicRate(mortgage.InterestRate(), mortgage.RateType(), periodsPerYear)
 	if err != nil {
 		return err
 	}
@@ -67,10 +68,17 @@ func (fmc *FrenchMethodCalculator) Calculate(mortgage *entities.Mortgage) error 
 	return nil
 }
 
-// convertToPeriodicRate convierte TNA o TEA a tasa efectiva mensual
-func (fmc *FrenchMethodCalculator) convertToPeriodicRate(annualRate float64, rateType valueobjects.RateType) (float64, error) {
+// convertToPeriodicRate convierte TNA o TEA a tasa efectiva por periodo según la frecuencia indicada.
+func (fmc *FrenchMethodCalculator) convertToPeriodicRate(
+	annualRate float64,
+	rateType valueobjects.RateType,
+	periodsPerYear float64,
+) (float64, error) {
 	if annualRate < 0 {
 		return 0, errors.New("interest rate cannot be negative")
+	}
+	if periodsPerYear <= 0 {
+		return 0, errors.New("periods per year must be greater than zero")
 	}
 
 	// Convertir porcentaje a decimal si es necesario (ej: 12% -> 0.12)
@@ -81,11 +89,11 @@ func (fmc *FrenchMethodCalculator) convertToPeriodicRate(annualRate float64, rat
 
 	switch rateType {
 	case valueobjects.RateTypeNominal:
-		// TNA: i_mensual = TNA / 12
-		return rate / 12.0, nil
+		// TNA: i_periodo = TNA / m
+		return rate / periodsPerYear, nil
 	case valueobjects.RateTypeEffective:
-		// TEA: i_mensual = (1 + TEA)^(1/12) - 1
-		return math.Pow(1+rate, 1.0/12.0) - 1, nil
+		// TEA: i_periodo = (1 + TEA)^(1/m) - 1
+		return math.Pow(1+rate, 1.0/periodsPerYear) - 1, nil
 	default:
 		return 0, errors.New("invalid rate type")
 	}
@@ -179,12 +187,15 @@ func (fmc *FrenchMethodCalculator) CalculateNPV(mortgage *entities.Mortgage, dis
 		return 0, errors.New("payment schedule not calculated")
 	}
 
-	// Convertir tasa anual a mensual si es necesario
-	monthlyDiscountRate := discountRate
-	if discountRate > 1 {
-		monthlyDiscountRate = discountRate / 100.0
+	periodsPerYear := mortgage.PeriodsPerYear()
+	periodicDiscountRate, err := fmc.convertToPeriodicRate(
+		discountRate,
+		valueobjects.RateTypeEffective,
+		periodsPerYear,
+	)
+	if err != nil {
+		return 0, err
 	}
-	monthlyDiscountRate = math.Pow(1+monthlyDiscountRate, 1.0/12.0) - 1
 
 	// Flujo inicial: desembolso del préstamo (negativo)
 	npv := -mortgage.PrincipalFinanced()
@@ -193,7 +204,7 @@ func (fmc *FrenchMethodCalculator) CalculateNPV(mortgage *entities.Mortgage, dis
 	items := mortgage.PaymentSchedule().GetItems()
 	for _, item := range items {
 		// CF_k / (1 + j)^k
-		discountFactor := math.Pow(1+monthlyDiscountRate, float64(item.Period))
+		discountFactor := math.Pow(1+periodicDiscountRate, float64(item.Period))
 		npv += item.Installment / discountFactor
 	}
 
@@ -250,8 +261,10 @@ func (fmc *FrenchMethodCalculator) CalculateIRR(mortgage *entities.Mortgage) (fl
 	return irr, nil
 }
 
-// CalculateTCEA calcula la Tasa de Costo Efectivo Anual
-// TCEA = (1 + TIR_mensual)^12 - 1
-func (fmc *FrenchMethodCalculator) CalculateTCEA(irr float64) float64 {
-	return math.Pow(1+irr, 12) - 1
+// CalculateTCEA calcula la Tasa de Costo Efectivo Anual ajustada a la frecuencia configurada.
+func (fmc *FrenchMethodCalculator) CalculateTCEA(irr float64, periodsPerYear float64) float64 {
+	if periodsPerYear <= 0 {
+		periodsPerYear = 12
+	}
+	return math.Pow(1+irr, periodsPerYear) - 1
 }

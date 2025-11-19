@@ -2,6 +2,10 @@ basePath: /
 definitions:
   resources.CalculateMortgageRequest:
     properties:
+      bank_id:
+        maxLength: 50
+        minLength: 1
+        type: string
       bono_techo_propio:
         minimum: 0
         type: number
@@ -10,6 +14,8 @@ definitions:
         - PEN
         - USD
         type: string
+      days_in_year:
+        type: integer
       down_payment:
         minimum: 0
         type: number
@@ -30,6 +36,8 @@ definitions:
       npv_discount_rate:
         minimum: 0
         type: number
+      payment_frequency_days:
+        type: integer
       property_price:
         type: number
       rate_type:
@@ -46,7 +54,6 @@ definitions:
     - interest_rate
     - loan_amount
     - property_price
-    - rate_type
     - term_months
     type: object
   resources.LoginResource:
@@ -71,12 +78,18 @@ definitions:
     type: object
   resources.MortgageResponse:
     properties:
+      bank_id:
+        type: string
+      bank_name:
+        type: string
       bono_techo_propio:
         type: number
       created_at:
         type: string
       currency:
         type: string
+      days_in_year:
+        type: integer
       down_payment:
         type: number
       fixed_installment:
@@ -95,6 +108,8 @@ definitions:
         type: number
       npv:
         type: number
+      payment_frequency_days:
+        type: integer
       payment_schedule:
         items:
           $ref: '#/definitions/resources.PaymentScheduleItemResource'
@@ -121,6 +136,10 @@ definitions:
     type: object
   resources.MortgageSummaryResource:
     properties:
+      bank_id:
+        type: string
+      bank_name:
+        type: string
       created_at:
         type: string
       currency:
@@ -175,6 +194,10 @@ definitions:
     type: object
   resources.UpdateMortgageRequest:
     properties:
+      bank_id:
+        maxLength: 50
+        minLength: 1
+        type: string
       bono_techo_propio:
         minimum: 0
         type: number
@@ -183,6 +206,8 @@ definitions:
         - PEN
         - USD
         type: string
+      days_in_year:
+        type: integer
       down_payment:
         minimum: 0
         type: number
@@ -203,6 +228,8 @@ definitions:
       npv_discount_rate:
         minimum: 0
         type: number
+      payment_frequency_days:
+        type: integer
       property_price:
         type: number
       rate_type:
