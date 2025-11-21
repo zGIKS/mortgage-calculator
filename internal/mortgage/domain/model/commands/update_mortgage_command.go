@@ -3,21 +3,26 @@ package commands
 import (
 	"errors"
 	"finanzas-backend/internal/mortgage/domain/model/valueobjects"
+
+	"github.com/google/uuid"
 )
 
 type UpdateMortgageCommand struct {
-	mortgageID        valueobjects.MortgageID
-	propertyPrice     *float64
-	downPayment       *float64
-	loanAmount        *float64
-	bonoTechoPropio   *float64
-	interestRate      *float64
-	rateType          *string
-	termMonths        *int
-	gracePeriodMonths *int
-	gracePeriodType   *string
-	currency          *string
-	npvDiscountRate   *float64
+	mortgageID           valueobjects.MortgageID
+	propertyPrice        *float64
+	downPayment          *float64
+	loanAmount           *float64
+	bonoTechoPropio      *float64
+	interestRate         *float64
+	rateType             *string
+	bankID               *uuid.UUID
+	paymentFrequencyDays *int
+	daysInYear           *int
+	termMonths           *int
+	gracePeriodMonths    *int
+	gracePeriodType      *string
+	currency             *string
+	npvDiscountRate      *float64
 }
 
 func NewUpdateMortgageCommand(
@@ -28,6 +33,9 @@ func NewUpdateMortgageCommand(
 	bonoTechoPropio *float64,
 	interestRate *float64,
 	rateType *string,
+	bankID *uuid.UUID,
+	paymentFrequencyDays *int,
+	daysInYear *int,
 	termMonths *int,
 	gracePeriodMonths *int,
 	gracePeriodType *string,
@@ -40,7 +48,8 @@ func NewUpdateMortgageCommand(
 
 	// Validate if any value is provided
 	hasUpdates := propertyPrice != nil || downPayment != nil || loanAmount != nil ||
-		bonoTechoPropio != nil || interestRate != nil || rateType != nil ||
+		bonoTechoPropio != nil || interestRate != nil || rateType != nil || bankID != nil ||
+		paymentFrequencyDays != nil || daysInYear != nil ||
 		termMonths != nil || gracePeriodMonths != nil || gracePeriodType != nil ||
 		currency != nil || npvDiscountRate != nil
 
@@ -77,6 +86,11 @@ func NewUpdateMortgageCommand(
 			return nil, err
 		}
 	}
+	if bankID != nil {
+		if _, err := valueobjects.NewBankID(*bankID); err != nil {
+			return nil, err
+		}
+	}
 	if gracePeriodType != nil {
 		if _, err := valueobjects.NewGracePeriodType(*gracePeriodType); err != nil {
 			return nil, err
@@ -88,19 +102,29 @@ func NewUpdateMortgageCommand(
 		}
 	}
 
+	if paymentFrequencyDays != nil && *paymentFrequencyDays <= 0 {
+		return nil, errors.New("payment frequency days must be greater than zero")
+	}
+	if daysInYear != nil && *daysInYear <= 0 {
+		return nil, errors.New("days in year must be greater than zero")
+	}
+
 	return &UpdateMortgageCommand{
-		mortgageID:        mortgageID,
-		propertyPrice:     propertyPrice,
-		downPayment:       downPayment,
-		loanAmount:        loanAmount,
-		bonoTechoPropio:   bonoTechoPropio,
-		interestRate:      interestRate,
-		rateType:          rateType,
-		termMonths:        termMonths,
-		gracePeriodMonths: gracePeriodMonths,
-		gracePeriodType:   gracePeriodType,
-		currency:          currency,
-		npvDiscountRate:   npvDiscountRate,
+		mortgageID:           mortgageID,
+		propertyPrice:        propertyPrice,
+		downPayment:          downPayment,
+		loanAmount:           loanAmount,
+		bonoTechoPropio:      bonoTechoPropio,
+		interestRate:         interestRate,
+		rateType:             rateType,
+		bankID:               bankID,
+		paymentFrequencyDays: paymentFrequencyDays,
+		daysInYear:           daysInYear,
+		termMonths:           termMonths,
+		gracePeriodMonths:    gracePeriodMonths,
+		gracePeriodType:      gracePeriodType,
+		currency:             currency,
+		npvDiscountRate:      npvDiscountRate,
 	}, nil
 }
 
@@ -112,6 +136,9 @@ func (c *UpdateMortgageCommand) LoanAmount() *float64                { return c.
 func (c *UpdateMortgageCommand) BonoTechoPropio() *float64           { return c.bonoTechoPropio }
 func (c *UpdateMortgageCommand) InterestRate() *float64              { return c.interestRate }
 func (c *UpdateMortgageCommand) RateType() *string                   { return c.rateType }
+func (c *UpdateMortgageCommand) BankID() *uuid.UUID                  { return c.bankID }
+func (c *UpdateMortgageCommand) PaymentFrequencyDays() *int          { return c.paymentFrequencyDays }
+func (c *UpdateMortgageCommand) DaysInYear() *int                    { return c.daysInYear }
 func (c *UpdateMortgageCommand) TermMonths() *int                    { return c.termMonths }
 func (c *UpdateMortgageCommand) GracePeriodMonths() *int             { return c.gracePeriodMonths }
 func (c *UpdateMortgageCommand) GracePeriodType() *string            { return c.gracePeriodType }

@@ -3,6 +3,8 @@ package commands
 import (
 	"errors"
 	"finanzas-backend/internal/mortgage/domain/model/valueobjects"
+
+	"github.com/google/uuid"
 )
 
 type CalculateMortgageCommand struct {
@@ -12,11 +14,11 @@ type CalculateMortgageCommand struct {
 	LoanAmount        float64
 	BonoTechoPropio   float64
 	InterestRate      float64
-	RateType          string // "NOMINAL" o "EFFECTIVE"
+	BankID            *uuid.UUID
 	TermMonths        int
 	GracePeriodMonths int
-	GracePeriodType   string // "NONE", "TOTAL", "PARTIAL"
-	Currency          string // "PEN" o "USD"
+	GracePeriodType   string  // "NONE", "TOTAL", "PARTIAL"
+	Currency          string  // "PEN" o "USD"
 	NPVDiscountRate   float64 // Tasa de descuento para calcular VAN (opcional)
 }
 
@@ -27,7 +29,7 @@ func NewCalculateMortgageCommand(
 	loanAmount float64,
 	bonoTechoPropio float64,
 	interestRate float64,
-	rateType string,
+	bankID *uuid.UUID,
 	termMonths int,
 	gracePeriodMonths int,
 	gracePeriodType string,
@@ -58,14 +60,18 @@ func NewCalculateMortgageCommand(
 	}
 
 	// Validar tipos de enumeraciones
-	if _, err := valueobjects.NewRateType(rateType); err != nil {
-		return nil, err
-	}
 	if _, err := valueobjects.NewGracePeriodType(gracePeriodType); err != nil {
 		return nil, err
 	}
 	if _, err := valueobjects.NewCurrency(currency); err != nil {
 		return nil, err
+	}
+	if bankID != nil {
+		if _, err := valueobjects.NewBankID(*bankID); err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errors.New("bank_id is required")
 	}
 
 	return &CalculateMortgageCommand{
@@ -75,7 +81,7 @@ func NewCalculateMortgageCommand(
 		LoanAmount:        loanAmount,
 		BonoTechoPropio:   bonoTechoPropio,
 		InterestRate:      interestRate,
-		RateType:          rateType,
+		BankID:            bankID,
 		TermMonths:        termMonths,
 		GracePeriodMonths: gracePeriodMonths,
 		GracePeriodType:   gracePeriodType,
