@@ -7,93 +7,93 @@ import (
 
 // CalculateMortgageRequest representa la solicitud para calcular un crédito hipotecario
 type CalculateMortgageRequest struct {
-	PropertyPrice     float64 `json:"property_price" binding:"required,gt=0"`
-	DownPayment       float64 `json:"down_payment" binding:"required,gte=0"`
-	LoanAmount        float64 `json:"loan_amount" binding:"required,gt=0"`
+	PrecioVenta       float64 `json:"precio_venta" binding:"required,gt=0"`
+	CuotaInicial      float64 `json:"cuota_inicial" binding:"required,gte=0"`
+	MontoPrestamo     float64 `json:"monto_prestamo" binding:"required,gt=0"`
 	BonoTechoPropio   float64 `json:"bono_techo_propio" binding:"gte=0"`
-	InterestRate      float64 `json:"interest_rate" binding:"required,gte=0"`
-	BankID            string  `json:"bank_id" binding:"required"`
-	TermMonths        int     `json:"term_months" binding:"required,gt=0"`
-	GracePeriodMonths int     `json:"grace_period_months" binding:"gte=0"`
-	GracePeriodType   string  `json:"grace_period_type" binding:"required,oneof=NONE TOTAL PARTIAL"`
-	Currency          string  `json:"currency" binding:"required,oneof=PEN USD"`
-	NPVDiscountRate   float64 `json:"npv_discount_rate" binding:"gte=0"`
+	TEA               float64 `json:"tea" binding:"required,gte=0"`
+	BankID            string  `json:"banco_id" binding:"required"`
+	PlazoMeses        int     `json:"plazo_meses" binding:"required,gt=0"`
+	MesesGracia       int     `json:"meses_gracia" binding:"gte=0"`
+	TipoGracia        string  `json:"tipo_gracia" binding:"required,oneof=NONE TOTAL PARTIAL"`
+	Moneda            string  `json:"moneda" binding:"required,oneof=PEN USD"`
+	TasaDescuento     float64 `json:"tasa_descuento" binding:"gte=0"`
 }
 
 // UpdateMortgageRequest representa la solicitud para actualizar un crédito hipotecario
 type UpdateMortgageRequest struct {
-	PropertyPrice        *float64 `json:"property_price,omitempty" binding:"omitempty,gt=0"`
-	DownPayment          *float64 `json:"down_payment,omitempty" binding:"omitempty,gte=0"`
-	LoanAmount           *float64 `json:"loan_amount,omitempty" binding:"omitempty,gt=0"`
-	BonoTechoPropio      *float64 `json:"bono_techo_propio,omitempty" binding:"omitempty,gte=0"`
-	InterestRate         *float64 `json:"interest_rate,omitempty" binding:"omitempty,gte=0"`
-	RateType             *string  `json:"rate_type,omitempty" binding:"omitempty,oneof=NOMINAL EFFECTIVE"`
-	BankID               *string  `json:"bank_id,omitempty"`
-	PaymentFrequencyDays *int     `json:"payment_frequency_days,omitempty" binding:"omitempty,gt=0"`
-	DaysInYear           *int     `json:"days_in_year,omitempty" binding:"omitempty,gt=0"`
-	TermMonths           *int     `json:"term_months,omitempty" binding:"omitempty,gt=0"`
-	GracePeriodMonths    *int     `json:"grace_period_months,omitempty" binding:"omitempty,gte=0"`
-	GracePeriodType      *string  `json:"grace_period_type,omitempty" binding:"omitempty,oneof=NONE TOTAL PARTIAL"`
-	Currency             *string  `json:"currency,omitempty" binding:"omitempty,oneof=PEN USD"`
-	NPVDiscountRate      *float64 `json:"npv_discount_rate,omitempty" binding:"omitempty,gte=0"`
+	PrecioVenta      *float64 `json:"precio_venta,omitempty" binding:"omitempty,gt=0"`
+	CuotaInicial     *float64 `json:"cuota_inicial,omitempty" binding:"omitempty,gte=0"`
+	MontoPrestamo    *float64 `json:"monto_prestamo,omitempty" binding:"omitempty,gt=0"`
+	BonoTechoPropio  *float64 `json:"bono_techo_propio,omitempty" binding:"omitempty,gte=0"`
+	TEA              *float64 `json:"tea,omitempty" binding:"omitempty,gte=0"`
+	TipoTasa         *string  `json:"tipo_tasa,omitempty" binding:"omitempty,oneof=NOMINAL EFFECTIVE"`
+	BankID           *string  `json:"banco_id,omitempty"`
+	FrecuenciaPago   *int     `json:"frecuencia_pago,omitempty" binding:"omitempty,gt=0"`
+	DiasAnio         *int     `json:"dias_anio,omitempty" binding:"omitempty,gt=0"`
+	PlazoMeses       *int     `json:"plazo_meses,omitempty" binding:"omitempty,gt=0"`
+	MesesGracia      *int     `json:"meses_gracia,omitempty" binding:"omitempty,gte=0"`
+	TipoGracia       *string  `json:"tipo_gracia,omitempty" binding:"omitempty,oneof=NONE TOTAL PARTIAL"`
+	Moneda           *string  `json:"moneda,omitempty" binding:"omitempty,oneof=PEN USD"`
+	TasaDescuento    *float64 `json:"tasa_descuento,omitempty" binding:"omitempty,gte=0"`
 }
 
 // PaymentScheduleItemResource representa un item del cronograma
 type PaymentScheduleItemResource struct {
-	Period           int     `json:"period"`
-	Installment      float64 `json:"installment"`
-	Interest         float64 `json:"interest"`
-	Amortization     float64 `json:"amortization"`
-	RemainingBalance float64 `json:"remaining_balance"`
-	IsGracePeriod    bool    `json:"is_grace_period"`
+	Periodo       int     `json:"periodo"`
+	Cuota         float64 `json:"cuota"`
+	Interes       float64 `json:"interes"`
+	Amortizacion  float64 `json:"amortizacion"`
+	SaldoFinal    float64 `json:"saldo_final"`
+	EsPeriodoGracia bool  `json:"es_periodo_gracia"`
 }
 
 // MortgageResponse representa la respuesta completa con todos los cálculos
 type MortgageResponse struct {
-	ID                   uint64  `json:"id"`
-	UserID               string  `json:"user_id"`
-	PropertyPrice        float64 `json:"property_price"`
-	DownPayment          float64 `json:"down_payment"`
-	LoanAmount           float64 `json:"loan_amount"`
-	BonoTechoPropio      float64 `json:"bono_techo_propio"`
-	InterestRate         float64 `json:"interest_rate"`
-	RateType             string  `json:"rate_type"`
-	BankID               *string `json:"bank_id,omitempty"`
-	BankName             string  `json:"bank_name,omitempty"`
-	TermMonths           int     `json:"term_months"`
-	GracePeriodMonths    int     `json:"grace_period_months"`
-	GracePeriodType      string  `json:"grace_period_type"`
-	Currency             string  `json:"currency"`
-	PaymentFrequencyDays int     `json:"payment_frequency_days"`
-	DaysInYear           int     `json:"days_in_year"`
+	ID              uint64  `json:"id"`
+	UserID          string  `json:"user_id"`
+	PrecioVenta     float64 `json:"precio_venta"`
+	CuotaInicial    float64 `json:"cuota_inicial"`
+	MontoPrestamo   float64 `json:"monto_prestamo"`
+	BonoTechoPropio float64 `json:"bono_techo_propio"`
+	TEA             float64 `json:"tea"`
+	TipoTasa        string  `json:"tipo_tasa"`
+	BancoID         *string `json:"banco_id,omitempty"`
+	BancoNombre     string  `json:"banco_nombre,omitempty"`
+	PlazoMeses      int     `json:"plazo_meses"`
+	MesesGracia     int     `json:"meses_gracia"`
+	TipoGracia      string  `json:"tipo_gracia"`
+	Moneda          string  `json:"moneda"`
+	FrecuenciaPago  int     `json:"frecuencia_pago"`
+	DiasAnio        int     `json:"dias_anio"`
 
 	// Resultados calculados
-	PrincipalFinanced float64                       `json:"principal_financed"`
-	PeriodicRate      float64                       `json:"periodic_rate"`
-	FixedInstallment  float64                       `json:"fixed_installment"`
-	PaymentSchedule   []PaymentScheduleItemResource `json:"payment_schedule"`
-	TotalInterestPaid float64                       `json:"total_interest_paid"`
-	TotalPaid         float64                       `json:"total_paid"`
-	NPV               float64                       `json:"npv"`
-	IRR               float64                       `json:"irr"`
-	TCEA              float64                       `json:"tcea"`
+	SaldoFinanciar   float64                       `json:"saldo_financiar"`
+	TasaPeriodo      float64                       `json:"tasa_periodo"`
+	CuotaFija        float64                       `json:"cuota_fija"`
+	CronogramaPagos  []PaymentScheduleItemResource `json:"cronograma_pagos"`
+	TotalIntereses   float64                       `json:"total_intereses"`
+	TotalPagado      float64                       `json:"total_pagado"`
+	VAN              float64                       `json:"van"`
+	TIR              float64                       `json:"tir"`
+	TCEA             float64                       `json:"tcea"`
 
 	CreatedAt time.Time `json:"created_at"`
 }
 
 // MortgageSummaryResource representa un resumen de hipoteca (para listas)
 type MortgageSummaryResource struct {
-	ID               uint64    `json:"id"`
-	UserID           string    `json:"user_id"`
-	PropertyPrice    float64   `json:"property_price"`
-	LoanAmount       float64   `json:"loan_amount"`
-	Currency         string    `json:"currency"`
-	TermMonths       int       `json:"term_months"`
-	FixedInstallment float64   `json:"fixed_installment"`
-	TCEA             float64   `json:"tcea"`
-	BankID           *string   `json:"bank_id,omitempty"`
-	BankName         string    `json:"bank_name,omitempty"`
-	CreatedAt        time.Time `json:"created_at"`
+	ID            uint64    `json:"id"`
+	UserID        string    `json:"user_id"`
+	PrecioVenta   float64   `json:"precio_venta"`
+	MontoPrestamo float64   `json:"monto_prestamo"`
+	Moneda        string    `json:"moneda"`
+	PlazoMeses    int       `json:"plazo_meses"`
+	CuotaFija     float64   `json:"cuota_fija"`
+	TCEA          float64   `json:"tcea"`
+	BancoID       *string   `json:"banco_id,omitempty"`
+	BancoNombre   string    `json:"banco_nombre,omitempty"`
+	CreatedAt     time.Time `json:"created_at"`
 }
 
 // TransformToMortgageResponse transforma una entidad Mortgage a MortgageResponse
@@ -102,71 +102,71 @@ func TransformToMortgageResponse(mortgage *entities.Mortgage) MortgageResponse {
 	if mortgage.PaymentSchedule() != nil {
 		for _, item := range mortgage.PaymentSchedule().GetItems() {
 			scheduleItems = append(scheduleItems, PaymentScheduleItemResource{
-				Period:           item.Period,
-				Installment:      item.Installment,
-				Interest:         item.Interest,
-				Amortization:     item.Amortization,
-				RemainingBalance: item.RemainingBalance,
-				IsGracePeriod:    item.IsGracePeriod,
+				Periodo:         item.Period,
+				Cuota:           item.Installment,
+				Interes:         item.Interest,
+				Amortizacion:    item.Amortization,
+				SaldoFinal:      item.RemainingBalance,
+				EsPeriodoGracia: item.IsGracePeriod,
 			})
 		}
 	}
 
-	var bankID *string
+	var bancoID *string
 	if mortgage.BankID() != nil {
 		value := mortgage.BankID().String()
-		bankID = &value
+		bancoID = &value
 	}
 
 	return MortgageResponse{
-		ID:                   mortgage.ID().Value(),
-		UserID:               mortgage.UserID().String(),
-		PropertyPrice:        mortgage.PropertyPrice(),
-		DownPayment:          mortgage.DownPayment(),
-		LoanAmount:           mortgage.LoanAmount(),
-		BonoTechoPropio:      mortgage.BonoTechoPropio(),
-		InterestRate:         mortgage.InterestRate(),
-		RateType:             mortgage.RateType().String(),
-		BankID:               bankID,
-		BankName:             mortgage.BankName(),
-		TermMonths:           mortgage.TermMonths(),
-		GracePeriodMonths:    mortgage.GracePeriodMonths(),
-		GracePeriodType:      mortgage.GracePeriodType().String(),
-		Currency:             mortgage.Currency().String(),
-		PaymentFrequencyDays: mortgage.PaymentFrequencyDays(),
-		DaysInYear:           mortgage.DaysInYear(),
-		PrincipalFinanced:    mortgage.PrincipalFinanced(),
-		PeriodicRate:         mortgage.PeriodicRate(),
-		FixedInstallment:     mortgage.FixedInstallment(),
-		PaymentSchedule:      scheduleItems,
-		TotalInterestPaid:    mortgage.TotalInterestPaid(),
-		TotalPaid:            mortgage.TotalPaid(),
-		NPV:                  mortgage.NPV(),
-		IRR:                  mortgage.IRR(),
-		TCEA:                 mortgage.TCEA(),
-		CreatedAt:            mortgage.CreatedAt(),
+		ID:              mortgage.ID().Value(),
+		UserID:          mortgage.UserID().String(),
+		PrecioVenta:     mortgage.PropertyPrice(),
+		CuotaInicial:    mortgage.DownPayment(),
+		MontoPrestamo:   mortgage.LoanAmount(),
+		BonoTechoPropio: mortgage.BonoTechoPropio(),
+		TEA:             mortgage.InterestRate(),
+		TipoTasa:        mortgage.RateType().String(),
+		BancoID:         bancoID,
+		BancoNombre:     mortgage.BankName(),
+		PlazoMeses:      mortgage.TermMonths(),
+		MesesGracia:     mortgage.GracePeriodMonths(),
+		TipoGracia:      mortgage.GracePeriodType().String(),
+		Moneda:          mortgage.Currency().String(),
+		FrecuenciaPago:  mortgage.PaymentFrequencyDays(),
+		DiasAnio:        mortgage.DaysInYear(),
+		SaldoFinanciar:  mortgage.PrincipalFinanced(),
+		TasaPeriodo:     mortgage.PeriodicRate(),
+		CuotaFija:       mortgage.FixedInstallment(),
+		CronogramaPagos: scheduleItems,
+		TotalIntereses:  mortgage.TotalInterestPaid(),
+		TotalPagado:     mortgage.TotalPaid(),
+		VAN:             mortgage.NPV(),
+		TIR:             mortgage.IRR(),
+		TCEA:            mortgage.TCEA(),
+		CreatedAt:       mortgage.CreatedAt(),
 	}
 }
 
 // TransformToMortgageSummary transforma una entidad Mortgage a MortgageSummaryResource
 func TransformToMortgageSummary(mortgage *entities.Mortgage) MortgageSummaryResource {
-	var bankID *string
+	var bancoID *string
 	if mortgage.BankID() != nil {
 		value := mortgage.BankID().String()
-		bankID = &value
+		bancoID = &value
 	}
 
 	return MortgageSummaryResource{
-		ID:               mortgage.ID().Value(),
-		UserID:           mortgage.UserID().String(),
-		PropertyPrice:    mortgage.PropertyPrice(),
-		LoanAmount:       mortgage.LoanAmount(),
-		Currency:         mortgage.Currency().String(),
-		TermMonths:       mortgage.TermMonths(),
-		FixedInstallment: mortgage.FixedInstallment(),
-		TCEA:             mortgage.TCEA(),
-		BankID:           bankID,
-		BankName:         mortgage.BankName(),
-		CreatedAt:        mortgage.CreatedAt(),
+		ID:            mortgage.ID().Value(),
+		UserID:        mortgage.UserID().String(),
+		PrecioVenta:   mortgage.PropertyPrice(),
+		MontoPrestamo: mortgage.LoanAmount(),
+		Moneda:        mortgage.Currency().String(),
+		PlazoMeses:    mortgage.TermMonths(),
+		CuotaFija:     mortgage.FixedInstallment(),
+		TCEA:          mortgage.TCEA(),
+		BancoID:       bancoID,
+		BancoNombre:   mortgage.BankName(),
+		CreatedAt:     mortgage.CreatedAt(),
 	}
 }

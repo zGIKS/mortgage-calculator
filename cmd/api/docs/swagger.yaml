@@ -26,49 +26,49 @@ definitions:
     type: object
   resources.CalculateMortgageRequest:
     properties:
-      bank_id:
+      banco_id:
         type: string
       bono_techo_propio:
         minimum: 0
         type: number
-      currency:
+      cuota_inicial:
+        minimum: 0
+        type: number
+      meses_gracia:
+        minimum: 0
+        type: integer
+      moneda:
         enum:
         - PEN
         - USD
         type: string
-      down_payment:
+      monto_prestamo:
+        type: number
+      plazo_meses:
+        type: integer
+      precio_venta:
+        type: number
+      tasa_descuento:
         minimum: 0
         type: number
-      grace_period_months:
+      tea:
         minimum: 0
-        type: integer
-      grace_period_type:
+        type: number
+      tipo_gracia:
         enum:
         - NONE
         - TOTAL
         - PARTIAL
         type: string
-      interest_rate:
-        minimum: 0
-        type: number
-      loan_amount:
-        type: number
-      npv_discount_rate:
-        minimum: 0
-        type: number
-      property_price:
-        type: number
-      term_months:
-        type: integer
     required:
-    - bank_id
-    - currency
-    - down_payment
-    - grace_period_type
-    - interest_rate
-    - loan_amount
-    - property_price
-    - term_months
+    - banco_id
+    - cuota_inicial
+    - moneda
+    - monto_prestamo
+    - plazo_meses
+    - precio_venta
+    - tea
+    - tipo_gracia
     type: object
   resources.LoginResource:
     properties:
@@ -92,100 +92,100 @@ definitions:
     type: object
   resources.MortgageResponse:
     properties:
-      bank_id:
+      banco_id:
         type: string
-      bank_name:
+      banco_nombre:
         type: string
       bono_techo_propio:
         type: number
       created_at:
         type: string
-      currency:
-        type: string
-      days_in_year:
-        type: integer
-      down_payment:
-        type: number
-      fixed_installment:
-        type: number
-      grace_period_months:
-        type: integer
-      grace_period_type:
-        type: string
-      id:
-        type: integer
-      interest_rate:
-        type: number
-      irr:
-        type: number
-      loan_amount:
-        type: number
-      npv:
-        type: number
-      payment_frequency_days:
-        type: integer
-      payment_schedule:
+      cronograma_pagos:
         items:
           $ref: '#/definitions/resources.PaymentScheduleItemResource'
         type: array
-      periodic_rate:
+      cuota_fija:
         type: number
-      principal_financed:
+      cuota_inicial:
+        type: number
+      dias_anio:
+        type: integer
+      frecuencia_pago:
+        type: integer
+      id:
+        type: integer
+      meses_gracia:
+        type: integer
+      moneda:
+        type: string
+      monto_prestamo:
+        type: number
+      plazo_meses:
+        type: integer
+      precio_venta:
+        type: number
+      saldo_financiar:
         description: Resultados calculados
         type: number
-      property_price:
+      tasa_periodo:
         type: number
-      rate_type:
-        type: string
       tcea:
         type: number
-      term_months:
-        type: integer
-      total_interest_paid:
+      tea:
         type: number
-      total_paid:
+      tipo_gracia:
+        type: string
+      tipo_tasa:
+        type: string
+      tir:
+        type: number
+      total_intereses:
+        type: number
+      total_pagado:
         type: number
       user_id:
         type: string
+      van:
+        type: number
     type: object
   resources.MortgageSummaryResource:
     properties:
-      bank_id:
+      banco_id:
         type: string
-      bank_name:
+      banco_nombre:
         type: string
       created_at:
         type: string
-      currency:
-        type: string
-      fixed_installment:
+      cuota_fija:
         type: number
       id:
         type: integer
-      loan_amount:
+      moneda:
+        type: string
+      monto_prestamo:
         type: number
-      property_price:
+      plazo_meses:
+        type: integer
+      precio_venta:
         type: number
       tcea:
         type: number
-      term_months:
-        type: integer
       user_id:
         type: string
     type: object
   resources.PaymentScheduleItemResource:
     properties:
-      amortization:
+      amortizacion:
         type: number
-      installment:
+      cuota:
         type: number
-      interest:
-        type: number
-      is_grace_period:
+      es_periodo_gracia:
         type: boolean
-      period:
+      interes:
+        type: number
+      periodo:
         type: integer
-      remaining_balance:
+      saldo_final:
         type: number
     type: object
   resources.RegisterUserResource:
@@ -208,49 +208,49 @@ definitions:
     type: object
   resources.UpdateMortgageRequest:
     properties:
-      bank_id:
+      banco_id:
         type: string
       bono_techo_propio:
         minimum: 0
         type: number
-      currency:
+      cuota_inicial:
+        minimum: 0
+        type: number
+      dias_anio:
+        type: integer
+      frecuencia_pago:
+        type: integer
+      meses_gracia:
+        minimum: 0
+        type: integer
+      moneda:
         enum:
         - PEN
         - USD
         type: string
-      days_in_year:
+      monto_prestamo:
+        type: number
+      plazo_meses:
         type: integer
-      down_payment:
+      precio_venta:
+        type: number
+      tasa_descuento:
         minimum: 0
         type: number
-      grace_period_months:
+      tea:
         minimum: 0
-        type: integer
-      grace_period_type:
+        type: number
+      tipo_gracia:
         enum:
         - NONE
         - TOTAL
         - PARTIAL
         type: string
-      interest_rate:
-        minimum: 0
-        type: number
-      loan_amount:
-        type: number
-      npv_discount_rate:
-        minimum: 0
-        type: number
-      payment_frequency_days:
-        type: integer
-      property_price:
-        type: number
-      rate_type:
+      tipo_tasa:
         enum:
         - NOMINAL
         - EFFECTIVE
         type: string
-      term_months:
-        type: integer
     type: object
   resources.UpdateUserResource:
     properties:

@@ -67,17 +67,17 @@ func (c *MortgageController) CalculateMortgage(ctx *gin.Context) {
 
 	cmd, err := commands.NewCalculateMortgageCommand(
 		userID,
-		req.PropertyPrice,
-		req.DownPayment,
-		req.LoanAmount,
+		req.PrecioVenta,
+		req.CuotaInicial,
+		req.MontoPrestamo,
 		req.BonoTechoPropio,
-		req.InterestRate,
+		req.TEA,
 		bankID,
-		req.TermMonths,
-		req.GracePeriodMonths,
-		req.GracePeriodType,
-		req.Currency,
-		req.NPVDiscountRate,
+		req.PlazoMeses,
+		req.MesesGracia,
+		req.TipoGracia,
+		req.Moneda,
+		req.TasaDescuento,
 	)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -234,20 +234,20 @@ func (c *MortgageController) UpdateMortgage(ctx *gin.Context) {
 
 	cmd, err := commands.NewUpdateMortgageCommand(
 		mortgageID,
-		req.PropertyPrice,
-		req.DownPayment,
-		req.LoanAmount,
+		req.PrecioVenta,
+		req.CuotaInicial,
+		req.MontoPrestamo,
 		req.BonoTechoPropio,
-		req.InterestRate,
-		req.RateType,
+		req.TEA,
+		req.TipoTasa,
 		bankID,
-		req.PaymentFrequencyDays,
-		req.DaysInYear,
-		req.TermMonths,
-		req.GracePeriodMonths,
-		req.GracePeriodType,
-		req.Currency,
-		req.NPVDiscountRate,
+		req.FrecuenciaPago,
+		req.DiasAnio,
+		req.PlazoMeses,
+		req.MesesGracia,
+		req.TipoGracia,
+		req.Moneda,
+		req.TasaDescuento,
 	)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

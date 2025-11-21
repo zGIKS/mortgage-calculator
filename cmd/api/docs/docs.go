@@ -664,62 +664,62 @@ const docTemplate = `{
         "resources.CalculateMortgageRequest": {
             "type": "object",
             "required": [
-                "bank_id",
-                "currency",
-                "down_payment",
-                "grace_period_type",
-                "interest_rate",
-                "loan_amount",
-                "property_price",
-                "term_months"
+                "banco_id",
+                "cuota_inicial",
+                "moneda",
+                "monto_prestamo",
+                "plazo_meses",
+                "precio_venta",
+                "tea",
+                "tipo_gracia"
             ],
             "properties": {
-                "bank_id": {
+                "banco_id": {
                     "type": "string"
                 },
                 "bono_techo_propio": {
                     "type": "number",
                     "minimum": 0
                 },
-                "currency": {
+                "cuota_inicial": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "meses_gracia": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "moneda": {
                     "type": "string",
                     "enum": [
                         "PEN",
                         "USD"
                     ]
                 },
-                "down_payment": {
+                "monto_prestamo": {
+                    "type": "number"
+                },
+                "plazo_meses": {
+                    "type": "integer"
+                },
+                "precio_venta": {
+                    "type": "number"
+                },
+                "tasa_descuento": {
                     "type": "number",
                     "minimum": 0
                 },
-                "grace_period_months": {
-                    "type": "integer",
+                "tea": {
+                    "type": "number",
                     "minimum": 0
                 },
-                "grace_period_type": {
+                "tipo_gracia": {
                     "type": "string",
                     "enum": [
                         "NONE",
                         "TOTAL",
                         "PARTIAL"
                     ]
-                },
-                "interest_rate": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "loan_amount": {
-                    "type": "number"
-                },
-                "npv_discount_rate": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "property_price": {
-                    "type": "number"
-                },
-                "term_months": {
-                    "type": "integer"
                 }
             }
         },
@@ -755,10 +755,10 @@ const docTemplate = `{
         "resources.MortgageResponse": {
             "type": "object",
             "properties": {
-                "bank_id": {
+                "banco_id": {
                     "type": "string"
                 },
-                "bank_name": {
+                "banco_nombre": {
                     "type": "string"
                 },
                 "bono_techo_propio": {
@@ -767,110 +767,110 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "currency": {
-                    "type": "string"
-                },
-                "days_in_year": {
-                    "type": "integer"
-                },
-                "down_payment": {
-                    "type": "number"
-                },
-                "fixed_installment": {
-                    "type": "number"
-                },
-                "grace_period_months": {
-                    "type": "integer"
-                },
-                "grace_period_type": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "interest_rate": {
-                    "type": "number"
-                },
-                "irr": {
-                    "type": "number"
-                },
-                "loan_amount": {
-                    "type": "number"
-                },
-                "npv": {
-                    "type": "number"
-                },
-                "payment_frequency_days": {
-                    "type": "integer"
-                },
-                "payment_schedule": {
+                "cronograma_pagos": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/resources.PaymentScheduleItemResource"
                     }
                 },
-                "periodic_rate": {
+                "cuota_fija": {
                     "type": "number"
                 },
-                "principal_financed": {
+                "cuota_inicial": {
+                    "type": "number"
+                },
+                "dias_anio": {
+                    "type": "integer"
+                },
+                "frecuencia_pago": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "meses_gracia": {
+                    "type": "integer"
+                },
+                "moneda": {
+                    "type": "string"
+                },
+                "monto_prestamo": {
+                    "type": "number"
+                },
+                "plazo_meses": {
+                    "type": "integer"
+                },
+                "precio_venta": {
+                    "type": "number"
+                },
+                "saldo_financiar": {
                     "description": "Resultados calculados",
                     "type": "number"
                 },
-                "property_price": {
+                "tasa_periodo": {
                     "type": "number"
-                },
-                "rate_type": {
-                    "type": "string"
                 },
                 "tcea": {
                     "type": "number"
                 },
-                "term_months": {
-                    "type": "integer"
-                },
-                "total_interest_paid": {
+                "tea": {
                     "type": "number"
                 },
-                "total_paid": {
+                "tipo_gracia": {
+                    "type": "string"
+                },
+                "tipo_tasa": {
+                    "type": "string"
+                },
+                "tir": {
+                    "type": "number"
+                },
+                "total_intereses": {
+                    "type": "number"
+                },
+                "total_pagado": {
                     "type": "number"
                 },
                 "user_id": {
                     "type": "string"
+                },
+                "van": {
+                    "type": "number"
                 }
             }
         },
         "resources.MortgageSummaryResource": {
             "type": "object",
             "properties": {
-                "bank_id": {
+                "banco_id": {
                     "type": "string"
                 },
-                "bank_name": {
+                "banco_nombre": {
                     "type": "string"
                 },
                 "created_at": {
                     "type": "string"
                 },
-                "currency": {
-                    "type": "string"
-                },
-                "fixed_installment": {
+                "cuota_fija": {
                     "type": "number"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "loan_amount": {
+                "moneda": {
+                    "type": "string"
+                },
+                "monto_prestamo": {
                     "type": "number"
                 },
-                "property_price": {
+                "plazo_meses": {
+                    "type": "integer"
+                },
+                "precio_venta": {
                     "type": "number"
                 },
                 "tcea": {
                     "type": "number"
-                },
-                "term_months": {
-                    "type": "integer"
                 },
                 "user_id": {
                     "type": "string"
@@ -880,22 +880,22 @@ const docTemplate = `{
         "resources.PaymentScheduleItemResource": {
             "type": "object",
             "properties": {
-                "amortization": {
+                "amortizacion": {
                     "type": "number"
                 },
-                "installment": {
+                "cuota": {
                     "type": "number"
                 },
-                "interest": {
-                    "type": "number"
-                },
-                "is_grace_period": {
+                "es_periodo_gracia": {
                     "type": "boolean"
                 },
-                "period": {
+                "interes": {
+                    "type": "number"
+                },
+                "periodo": {
                     "type": "integer"
                 },
-                "remaining_balance": {
+                "saldo_final": {
                     "type": "number"
                 }
             }
@@ -927,32 +927,52 @@ const docTemplate = `{
         "resources.UpdateMortgageRequest": {
             "type": "object",
             "properties": {
-                "bank_id": {
+                "banco_id": {
                     "type": "string"
                 },
                 "bono_techo_propio": {
                     "type": "number",
                     "minimum": 0
                 },
-                "currency": {
+                "cuota_inicial": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "dias_anio": {
+                    "type": "integer"
+                },
+                "frecuencia_pago": {
+                    "type": "integer"
+                },
+                "meses_gracia": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "moneda": {
                     "type": "string",
                     "enum": [
                         "PEN",
                         "USD"
                     ]
                 },
-                "days_in_year": {
+                "monto_prestamo": {
+                    "type": "number"
+                },
+                "plazo_meses": {
                     "type": "integer"
                 },
-                "down_payment": {
+                "precio_venta": {
+                    "type": "number"
+                },
+                "tasa_descuento": {
                     "type": "number",
                     "minimum": 0
                 },
-                "grace_period_months": {
-                    "type": "integer",
+                "tea": {
+                    "type": "number",
                     "minimum": 0
                 },
-                "grace_period_type": {
+                "tipo_gracia": {
                     "type": "string",
                     "enum": [
                         "NONE",
@@ -960,32 +980,12 @@ const docTemplate = `{
                         "PARTIAL"
                     ]
                 },
-                "interest_rate": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "loan_amount": {
-                    "type": "number"
-                },
-                "npv_discount_rate": {
-                    "type": "number",
-                    "minimum": 0
-                },
-                "payment_frequency_days": {
-                    "type": "integer"
-                },
-                "property_price": {
-                    "type": "number"
-                },
-                "rate_type": {
+                "tipo_tasa": {
                     "type": "string",
                     "enum": [
                         "NOMINAL",
                         "EFFECTIVE"
                     ]
-                },
-                "term_months": {
-                    "type": "integer"
                 }
             }
         },
