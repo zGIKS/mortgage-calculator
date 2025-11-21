@@ -9,7 +9,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// SeedBanks ensures core bank profiles exist (starting with Interbank).
+// SeedBanks ensures core bank profiles exist.
+// Datos basados en información de la SBS (Superintendencia de Banca, Seguros y AFP)
+// Fuente: https://www.sbs.gob.pe/app/pp/EstadisticasSAEEPortal/Paginas/TIActivaTipoCreditoEmpresa.aspx?tip=B
+// Regulación: Resolución S.B.S. N° 3274-2017 (año comercial de 360 días)
 func SeedBanks(db *gorm.DB) error {
 	banks := []struct {
 		Name                 string
@@ -19,10 +22,30 @@ func SeedBanks(db *gorm.DB) error {
 		IncludesInflation    bool
 	}{
 		{
+			// Interbank - TEA hipotecaria: 7.72% (Nov 2025)
+			// Fuente: https://interbank.pe/tasas-tarifas
 			Name:                 "Interbank",
 			RateType:             "EFFECTIVE",
-			PaymentFrequencyDays: 30,  // cuotas vencidas mensuales por defecto
-			DaysInYear:           360, // convención bancaria peruana
+			PaymentFrequencyDays: 30,  // cuotas mensuales
+			DaysInYear:           360, // convención bancaria peruana (SBS)
+			IncludesInflation:    false,
+		},
+		{
+			// BBVA Perú - TEA hipotecaria: 7.65% (Nov 2025)
+			// Fuente: https://www.bbva.pe/personas/productos/prestamos/credito-hipotecario.html
+			Name:                 "BBVA",
+			RateType:             "EFFECTIVE",
+			PaymentFrequencyDays: 30,  // cuotas mensuales
+			DaysInYear:           360, // convención bancaria peruana (SBS)
+			IncludesInflation:    false,
+		},
+		{
+			// BCP (Banco de Crédito del Perú) - TEA hipotecaria: 8.02% (Nov 2025)
+			// Fuente: https://www.viabcp.com/tasasytarifas
+			Name:                 "BCP",
+			RateType:             "EFFECTIVE",
+			PaymentFrequencyDays: 30,  // cuotas mensuales
+			DaysInYear:           360, // convención bancaria peruana (SBS)
 			IncludesInflation:    false,
 		},
 	}
