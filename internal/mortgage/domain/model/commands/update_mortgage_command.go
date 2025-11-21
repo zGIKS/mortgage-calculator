@@ -3,6 +3,8 @@ package commands
 import (
 	"errors"
 	"finanzas-backend/internal/mortgage/domain/model/valueobjects"
+
+	"github.com/google/uuid"
 )
 
 type UpdateMortgageCommand struct {
@@ -13,7 +15,7 @@ type UpdateMortgageCommand struct {
 	bonoTechoPropio      *float64
 	interestRate         *float64
 	rateType             *string
-	bankID               *string
+	bankID               *uuid.UUID
 	paymentFrequencyDays *int
 	daysInYear           *int
 	termMonths           *int
@@ -31,7 +33,7 @@ func NewUpdateMortgageCommand(
 	bonoTechoPropio *float64,
 	interestRate *float64,
 	rateType *string,
-	bankID *string,
+	bankID *uuid.UUID,
 	paymentFrequencyDays *int,
 	daysInYear *int,
 	termMonths *int,
@@ -134,7 +136,7 @@ func (c *UpdateMortgageCommand) LoanAmount() *float64                { return c.
 func (c *UpdateMortgageCommand) BonoTechoPropio() *float64           { return c.bonoTechoPropio }
 func (c *UpdateMortgageCommand) InterestRate() *float64              { return c.interestRate }
 func (c *UpdateMortgageCommand) RateType() *string                   { return c.rateType }
-func (c *UpdateMortgageCommand) BankID() *string                     { return c.bankID }
+func (c *UpdateMortgageCommand) BankID() *uuid.UUID                  { return c.bankID }
 func (c *UpdateMortgageCommand) PaymentFrequencyDays() *int          { return c.paymentFrequencyDays }
 func (c *UpdateMortgageCommand) DaysInYear() *int                    { return c.daysInYear }
 func (c *UpdateMortgageCommand) TermMonths() *int                    { return c.termMonths }

@@ -4,35 +4,56 @@ import (
 	"time"
 
 	"finanzas-backend/internal/mortgage/infrastructure/persistence/models"
+
+	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 // SeedBanks ensures core bank profiles exist (starting with Interbank).
 func SeedBanks(db *gorm.DB) error {
-	now := time.Now()
-	records := []models.BankModel{
+	banks := []struct {
+		Name                 string
+		RateType             string
+		PaymentFrequencyDays int
+		DaysInYear           int
+		IncludesInflation    bool
+	}{
 		{
-			ID:                   "INTERBANK",
 			Name:                 "Interbank",
 			RateType:             "EFFECTIVE",
 			PaymentFrequencyDays: 30,  // cuotas vencidas mensuales por defecto
 			DaysInYear:           360, // convención bancaria peruana
 			IncludesInflation:    false,
-			CreatedAt:            now,
-			UpdatedAt:            now,
 		},
 	}
 
-	for _, record := range records {
-		entity := record
-		err := db.Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "id"}},
-			DoNothing: true,
-		}).Create(&entity).Error
-		if err != nil {
-			return err
+	for _, bankData := range banks {
+		// Check if bank already exists by name
+		var existingBank models.BankModel
+		result := db.Where("name = ?", bankData.Name).First(&existingBank)
+
+		// Only create if not found
+		if result.Error == gorm.ErrRecordNotFound {
+			now := time.Now()
+			newBank := models.BankModel{
+				ID:                   uuid.New(),
+				Name:                 bankData.Name,
+				RateType:             bankData.RateType,
+				PaymentFrequencyDays: bankData.PaymentFrequencyDays,
+				DaysInYear:           bankData.DaysInYear,
+				IncludesInflation:    bankData.IncludesInflation,
+				CreatedAt:            now,
+				UpdatedAt:            now,
+			}
+
+			if err := db.Create(&newBank).Error; err != nil {
+				return err
+			}
+		} else if result.Error != nil {
+			// If error is not "record not found", return it
+			return result.Error
 		}
+		// If bank exists, do nothing
 	}
 
 	return nil

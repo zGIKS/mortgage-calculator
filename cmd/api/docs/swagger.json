@@ -8,6 +8,119 @@
     },
     "basePath": "/",
     "paths": {
+        "/api/v1/banks": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get all available banks with their configuration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Banks"
+                ],
+                "summary": "Get all banks",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/resources.BankResource"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/banks/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get a specific bank by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Banks"
+                ],
+                "summary": "Get bank by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bank ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resources.BankResource"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/iam/login": {
             "post": {
                 "description": "Authenticate user and return token",
@@ -185,7 +298,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Calculates a mortgage loan using the French amortization method (constant installments)",
+                "description": "Calculates a mortgage loan using the French amortization method (constant installments). The bank_id is required and determines the rate type, payment frequency, and days in year.",
                 "consumes": [
                     "application/json"
                 ],
@@ -225,15 +338,6 @@
                     },
                     "401": {
                         "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -517,9 +621,43 @@
         }
     },
     "definitions": {
+        "resources.BankResource": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "days_in_year": {
+                    "type": "integer",
+                    "example": 360
+                },
+                "id": {
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                },
+                "includes_inflation": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Banco de Crédito del Perú"
+                },
+                "payment_frequency_days": {
+                    "type": "integer",
+                    "example": 30
+                },
+                "rate_type": {
+                    "type": "string",
+                    "example": "EFFECTIVE"
+                }
+            }
+        },
         "resources.CalculateMortgageRequest": {
             "type": "object",
             "required": [
+                "bank_id",
                 "currency",
                 "down_payment",
                 "grace_period_type",
@@ -530,9 +668,7 @@
             ],
             "properties": {
                 "bank_id": {
-                    "type": "string",
-                    "maxLength": 50,
-                    "minLength": 1
+                    "type": "string"
                 },
                 "bono_techo_propio": {
                     "type": "number",
@@ -544,9 +680,6 @@
                         "PEN",
                         "USD"
                     ]
-                },
-                "days_in_year": {
-                    "type": "integer"
                 },
                 "down_payment": {
                     "type": "number",
@@ -575,18 +708,8 @@
                     "type": "number",
                     "minimum": 0
                 },
-                "payment_frequency_days": {
-                    "type": "integer"
-                },
                 "property_price": {
                     "type": "number"
-                },
-                "rate_type": {
-                    "type": "string",
-                    "enum": [
-                        "NOMINAL",
-                        "EFFECTIVE"
-                    ]
                 },
                 "term_months": {
                     "type": "integer"
@@ -798,9 +921,7 @@
             "type": "object",
             "properties": {
                 "bank_id": {
-                    "type": "string",
-                    "maxLength": 50,
-                    "minLength": 1
+                    "type": "string"
                 },
                 "bono_techo_propio": {
                     "type": "number",

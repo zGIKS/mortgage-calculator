@@ -7,20 +7,17 @@ import (
 
 // CalculateMortgageRequest representa la solicitud para calcular un crédito hipotecario
 type CalculateMortgageRequest struct {
-	PropertyPrice        float64 `json:"property_price" binding:"required,gt=0"`
-	DownPayment          float64 `json:"down_payment" binding:"required,gte=0"`
-	LoanAmount           float64 `json:"loan_amount" binding:"required,gt=0"`
-	BonoTechoPropio      float64 `json:"bono_techo_propio" binding:"gte=0"`
-	InterestRate         float64 `json:"interest_rate" binding:"required,gte=0"`
-	RateType             *string `json:"rate_type,omitempty" binding:"omitempty,oneof=NOMINAL EFFECTIVE"`
-	BankID               *string `json:"bank_id,omitempty" binding:"omitempty,min=1,max=50"`
-	PaymentFrequencyDays *int    `json:"payment_frequency_days,omitempty" binding:"omitempty,gt=0"`
-	DaysInYear           *int    `json:"days_in_year,omitempty" binding:"omitempty,gt=0"`
-	TermMonths           int     `json:"term_months" binding:"required,gt=0"`
-	GracePeriodMonths    int     `json:"grace_period_months" binding:"gte=0"`
-	GracePeriodType      string  `json:"grace_period_type" binding:"required,oneof=NONE TOTAL PARTIAL"`
-	Currency             string  `json:"currency" binding:"required,oneof=PEN USD"`
-	NPVDiscountRate      float64 `json:"npv_discount_rate" binding:"gte=0"`
+	PropertyPrice     float64 `json:"property_price" binding:"required,gt=0"`
+	DownPayment       float64 `json:"down_payment" binding:"required,gte=0"`
+	LoanAmount        float64 `json:"loan_amount" binding:"required,gt=0"`
+	BonoTechoPropio   float64 `json:"bono_techo_propio" binding:"gte=0"`
+	InterestRate      float64 `json:"interest_rate" binding:"required,gte=0"`
+	BankID            string  `json:"bank_id" binding:"required"`
+	TermMonths        int     `json:"term_months" binding:"required,gt=0"`
+	GracePeriodMonths int     `json:"grace_period_months" binding:"gte=0"`
+	GracePeriodType   string  `json:"grace_period_type" binding:"required,oneof=NONE TOTAL PARTIAL"`
+	Currency          string  `json:"currency" binding:"required,oneof=PEN USD"`
+	NPVDiscountRate   float64 `json:"npv_discount_rate" binding:"gte=0"`
 }
 
 // UpdateMortgageRequest representa la solicitud para actualizar un crédito hipotecario
@@ -31,7 +28,7 @@ type UpdateMortgageRequest struct {
 	BonoTechoPropio      *float64 `json:"bono_techo_propio,omitempty" binding:"omitempty,gte=0"`
 	InterestRate         *float64 `json:"interest_rate,omitempty" binding:"omitempty,gte=0"`
 	RateType             *string  `json:"rate_type,omitempty" binding:"omitempty,oneof=NOMINAL EFFECTIVE"`
-	BankID               *string  `json:"bank_id,omitempty" binding:"omitempty,min=1,max=50"`
+	BankID               *string  `json:"bank_id,omitempty"`
 	PaymentFrequencyDays *int     `json:"payment_frequency_days,omitempty" binding:"omitempty,gt=0"`
 	DaysInYear           *int     `json:"days_in_year,omitempty" binding:"omitempty,gt=0"`
 	TermMonths           *int     `json:"term_months,omitempty" binding:"omitempty,gt=0"`

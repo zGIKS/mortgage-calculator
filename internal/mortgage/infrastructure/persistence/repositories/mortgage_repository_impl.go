@@ -7,6 +7,7 @@ import (
 	"finanzas-backend/internal/mortgage/domain/model/valueobjects"
 	"finanzas-backend/internal/mortgage/domain/repositories"
 	"finanzas-backend/internal/mortgage/infrastructure/persistence/models"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -146,10 +147,10 @@ func (r *MortgageRepositoryImpl) Delete(ctx context.Context, id valueobjects.Mor
 }
 
 func (r *MortgageRepositoryImpl) toModel(mortgage *entities.Mortgage) *models.MortgageModel {
-	var bankID *string
+	var bankID *uuid.UUID
 	bankIDVO := mortgage.BankID()
 	if bankIDVO != nil {
-		value := bankIDVO.String()
+		value := bankIDVO.Value()
 		bankID = &value
 	}
 
@@ -243,7 +244,7 @@ func (r *MortgageRepositoryImpl) toDomain(model *models.MortgageModel) (*entitie
 	}
 
 	var bankID *valueobjects.BankID
-	if model.BankID != nil && *model.BankID != "" {
+	if model.BankID != nil && *model.BankID != uuid.Nil {
 		bid, err := valueobjects.NewBankID(*model.BankID)
 		if err != nil {
 			return nil, err

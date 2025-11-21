@@ -37,30 +37,22 @@ func (s *MortgageCommandServiceImpl) HandleCalculateMortgage(
 		return nil, err
 	}
 
-	var bank *entities.Bank
-	if cmd.BankID != nil {
-		bankID, err := valueobjects.NewBankID(*cmd.BankID)
-		if err != nil {
-			return nil, err
-		}
-
-		bank, err = s.bankRepository.FindByID(ctx, bankID)
-		if err != nil {
-			return nil, err
-		}
+	// Fetch bank information (required)
+	bankID, err := valueobjects.NewBankID(*cmd.BankID)
+	if err != nil {
+		return nil, err
 	}
 
-	var rateType valueobjects.RateType
-	if bank != nil {
-		rateType = bank.RateType()
-	} else if cmd.RateType != nil {
-		rateType, err = valueobjects.NewRateType(*cmd.RateType)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, errors.New("rate type or bank profile is required")
+	bank, err := s.bankRepository.FindByID(ctx, bankID)
+	if err != nil {
+		return nil, err
 	}
+	if bank == nil {
+		return nil, errors.New("bank not found")
+	}
+
+	// Get rate type from bank
+	rateType := bank.RateType()
 
 	gracePeriodType, err := valueobjects.NewGracePeriodType(cmd.GracePeriodType)
 	if err != nil {
@@ -90,17 +82,8 @@ func (s *MortgageCommandServiceImpl) HandleCalculateMortgage(
 		return nil, err
 	}
 
-	// Attach bank/frequency configuration
-	if bank != nil {
-		mortgage.SetBank(bank)
-	} else {
-		if cmd.PaymentFrequencyDays != nil {
-			mortgage.SetPaymentFrequencyDays(*cmd.PaymentFrequencyDays)
-		}
-		if cmd.DaysInYear != nil {
-			mortgage.SetDaysInYear(*cmd.DaysInYear)
-		}
-	}
+	// Attach bank configuration (rate type, payment frequency, days in year)
+	mortgage.SetBank(bank)
 
 	// Calcular cronograma usando método francés
 	if err := s.calculator.Calculate(mortgage); err != nil {

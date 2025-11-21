@@ -167,11 +167,21 @@ func setupMortgageContext(router *gin.Engine, db *gorm.DB, iamFacade iamACL.IAMC
 	// Services
 	mortgageCommandService := mortgageCommandServices.NewMortgageCommandService(mortgageRepo, bankRepo)
 	mortgageQueryService := mortgageQueryServices.NewMortgageQueryService(mortgageRepo)
+	bankQueryService := mortgageQueryServices.NewBankQueryService(bankRepo)
 
 	// Controllers
 	mortgageController := mortgageControllers.NewMortgageController(mortgageCommandService, mortgageQueryService)
+	bankController := mortgageControllers.NewBankController(bankQueryService)
 
-	// Routes (todas protegidas con JWT)
+	// Routes - Banks (protegidas con JWT)
+	banksGroup := router.Group("/api/v1/banks")
+	banksGroup.Use(authMiddleware)
+	{
+		banksGroup.GET("", bankController.GetAllBanks)
+		banksGroup.GET("/:id", bankController.GetBankByID)
+	}
+
+	// Routes - Mortgage (todas protegidas con JWT)
 	mortgageGroup := router.Group("/api/v1/mortgage")
 	mortgageGroup.Use(authMiddleware) // Aplicar middleware a todas las rutas
 	{
