@@ -30,7 +30,6 @@ import (
 	mortgageCommandServices "finanzas-backend/internal/mortgage/application/commandservices"
 	mortgageQueryServices "finanzas-backend/internal/mortgage/application/queryservices"
 	mortgageRepos "finanzas-backend/internal/mortgage/infrastructure/persistence/repositories"
-	mortgageSeed "finanzas-backend/internal/mortgage/infrastructure/persistence/seed"
 	mortgageControllers "finanzas-backend/internal/mortgage/interfaces/rest/controllers"
 	mortgageMiddleware "finanzas-backend/internal/mortgage/interfaces/rest/middleware"
 )
@@ -158,28 +157,14 @@ func setupMortgageContext(router *gin.Engine, db *gorm.DB, iamFacade iamACL.IAMC
 	authMiddleware := mortgageMiddleware.JWTAuthMiddleware(externalAuthService)
 
 	// Repositories
-	bankRepo := mortgageRepos.NewBankRepository(db)
-	if err := mortgageSeed.SeedBanks(db); err != nil {
-		log.Printf("failed to seed banks: %v", err)
-	}
 	mortgageRepo := mortgageRepos.NewMortgageRepository(db)
 
 	// Services
-	mortgageCommandService := mortgageCommandServices.NewMortgageCommandService(mortgageRepo, bankRepo)
+	mortgageCommandService := mortgageCommandServices.NewMortgageCommandService(mortgageRepo)
 	mortgageQueryService := mortgageQueryServices.NewMortgageQueryService(mortgageRepo)
-	bankQueryService := mortgageQueryServices.NewBankQueryService(bankRepo)
 
 	// Controllers
 	mortgageController := mortgageControllers.NewMortgageController(mortgageCommandService, mortgageQueryService)
-	bankController := mortgageControllers.NewBankController(bankQueryService)
-
-	// Routes - Banks (protegidas con JWT)
-	banksGroup := router.Group("/api/v1/banks")
-	banksGroup.Use(authMiddleware)
-	{
-		banksGroup.GET("", bankController.GetAllBanks)
-		banksGroup.GET("/:id", bankController.GetBankByID)
-	}
 
 	// Routes - Mortgage (todas protegidas con JWT)
 	mortgageGroup := router.Group("/api/v1/mortgage")

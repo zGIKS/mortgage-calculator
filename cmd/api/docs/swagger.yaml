@@ -1,39 +1,17 @@
 basePath: /
 definitions:
-  resources.BankResource:
-    properties:
-      created_at:
-        example: "2023-01-01T00:00:00Z"
-        type: string
-      days_in_year:
-        example: 360
-        type: integer
-      id:
-        example: 123e4567-e89b-12d3-a456-426614174000
-        type: string
-      includes_inflation:
-        example: false
-        type: boolean
-      name:
-        example: Banco de Crédito del Perú
-        type: string
-      payment_frequency_days:
-        example: 30
-        type: integer
-      rate_type:
-        example: EFFECTIVE
-        type: string
-    type: object
   resources.CalculateMortgageRequest:
     properties:
-      banco_id:
-        type: string
       bono_techo_propio:
         minimum: 0
         type: number
       cuota_inicial:
         minimum: 0
         type: number
+      dias_anio:
+        type: integer
+      frecuencia_pago:
+        type: integer
       meses_gracia:
         minimum: 0
         type: integer
@@ -48,10 +26,10 @@ definitions:
         type: integer
       precio_venta:
         type: number
-      tasa_descuento:
+      tasa_anual:
         minimum: 0
         type: number
-      tea:
+      tasa_descuento:
         minimum: 0
         type: number
       tipo_gracia:
@@ -60,15 +38,22 @@ definitions:
         - TOTAL
         - PARTIAL
         type: string
+      tipo_tasa:
+        enum:
+        - NOMINAL
+        - EFFECTIVE
+        type: string
     required:
-    - banco_id
     - cuota_inicial
+    - dias_anio
+    - frecuencia_pago
     - moneda
     - monto_prestamo
     - plazo_meses
     - precio_venta
-    - tea
+    - tasa_anual
     - tipo_gracia
+    - tipo_tasa
     type: object
   resources.LoginResource:
     properties:
@@ -92,10 +77,6 @@ definitions:
     type: object
   resources.MortgageResponse:
     properties:
-      banco_id:
-        type: string
-      banco_nombre:
-        type: string
       bono_techo_propio:
         type: number
       created_at:
@@ -127,11 +108,11 @@ definitions:
       saldo_financiar:
         description: Resultados calculados
         type: number
+      tasa_anual:
+        type: number
       tasa_periodo:
         type: number
       tcea:
-        type: number
-      tea:
         type: number
       tipo_gracia:
         type: string
@@ -150,10 +131,6 @@ definitions:
     type: object
   resources.MortgageSummaryResource:
     properties:
-      banco_id:
-        type: string
-      banco_nombre:
-        type: string
       created_at:
         type: string
       cuota_fija:
@@ -208,8 +185,6 @@ definitions:
     type: object
   resources.UpdateMortgageRequest:
     properties:
-      banco_id:
-        type: string
       bono_techo_propio:
         minimum: 0
         type: number
@@ -234,10 +209,10 @@ definitions:
         type: integer
       precio_venta:
         type: number
-      tasa_descuento:
+      tasa_anual:
         minimum: 0
         type: number
-      tea:
+      tasa_descuento:
         minimum: 0
         type: number
       tipo_gracia:
@@ -287,78 +262,6 @@ info:
   title: Finanzas API - MiVivienda Mortgage Calculator
   version: "1.0"
 paths:
-  /api/v1/banks:
-    get:
-      consumes:
-      - application/json
-      description: Get all available banks with their configuration
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/resources.BankResource'
-            type: array
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Get all banks
-      tags:
-      - Banks
-  /api/v1/banks/{id}:
-    get:
-      consumes:
-      - application/json
-      description: Get a specific bank by ID
-      parameters:
-      - description: Bank ID (UUID)
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/resources.BankResource'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Get bank by ID
-      tags:
-      - Banks
   /api/v1/iam/login:
     post:
       consumes:
@@ -609,8 +512,7 @@ paths:
       consumes:
       - application/json
       description: Calculates a mortgage loan using the French amortization method
-        (constant installments). The bank_id is required and determines the rate type,
-        payment frequency, and days in year.
+        (constant installments)
       parameters:
       - description: Mortgage calculation request
         in: body

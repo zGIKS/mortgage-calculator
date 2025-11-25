@@ -11,7 +11,6 @@ import (
 	"finanzas-backend/internal/mortgage/interfaces/rest/resources"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type MortgageController struct {
@@ -31,7 +30,7 @@ func NewMortgageController(
 
 // CalculateMortgage godoc
 // @Summary Calculate mortgage with French method
-// @Description Calculates a mortgage loan using the French amortization method (constant installments). The bank_id is required and determines the rate type, payment frequency, and days in year.
+// @Description Calculates a mortgage loan using the French amortization method (constant installments)
 // @Tags Mortgage
 // @Accept json
 // @Produce json
@@ -57,22 +56,16 @@ func (c *MortgageController) CalculateMortgage(ctx *gin.Context) {
 
 	userID := userIDValue.(string)
 
-	// Parse BankID (required)
-	parsed, err := uuid.Parse(req.BankID)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid bank ID format"})
-		return
-	}
-	bankID := &parsed
-
 	cmd, err := commands.NewCalculateMortgageCommand(
 		userID,
 		req.PrecioVenta,
 		req.CuotaInicial,
 		req.MontoPrestamo,
 		req.BonoTechoPropio,
-		req.TEA,
-		bankID,
+		req.TasaAnual,
+		req.TipoTasa,
+		req.FrecuenciaPago,
+		req.DiasAnio,
 		req.PlazoMeses,
 		req.MesesGracia,
 		req.TipoGracia,
@@ -221,26 +214,14 @@ func (c *MortgageController) UpdateMortgage(ctx *gin.Context) {
 		return
 	}
 
-	// Parse BankID if provided
-	var bankID *uuid.UUID
-	if req.BankID != nil {
-		parsed, err := uuid.Parse(*req.BankID)
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid bank ID format"})
-			return
-		}
-		bankID = &parsed
-	}
-
 	cmd, err := commands.NewUpdateMortgageCommand(
 		mortgageID,
 		req.PrecioVenta,
 		req.CuotaInicial,
 		req.MontoPrestamo,
 		req.BonoTechoPropio,
-		req.TEA,
+		req.TasaAnual,
 		req.TipoTasa,
-		bankID,
 		req.FrecuenciaPago,
 		req.DiasAnio,
 		req.PlazoMeses,

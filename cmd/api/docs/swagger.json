@@ -8,119 +8,6 @@
     },
     "basePath": "/",
     "paths": {
-        "/api/v1/banks": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get all available banks with their configuration",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Banks"
-                ],
-                "summary": "Get all banks",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/resources.BankResource"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/banks/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get a specific bank by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Banks"
-                ],
-                "summary": "Get bank by ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Bank ID (UUID)",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/resources.BankResource"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/iam/login": {
             "post": {
                 "description": "Authenticate user and return token",
@@ -298,7 +185,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Calculates a mortgage loan using the French amortization method (constant installments). The bank_id is required and determines the rate type, payment frequency, and days in year.",
+                "description": "Calculates a mortgage loan using the French amortization method (constant installments)",
                 "consumes": [
                     "application/json"
                 ],
@@ -621,55 +508,21 @@
         }
     },
     "definitions": {
-        "resources.BankResource": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string",
-                    "example": "2023-01-01T00:00:00Z"
-                },
-                "days_in_year": {
-                    "type": "integer",
-                    "example": 360
-                },
-                "id": {
-                    "type": "string",
-                    "example": "123e4567-e89b-12d3-a456-426614174000"
-                },
-                "includes_inflation": {
-                    "type": "boolean",
-                    "example": false
-                },
-                "name": {
-                    "type": "string",
-                    "example": "Banco de Crédito del Perú"
-                },
-                "payment_frequency_days": {
-                    "type": "integer",
-                    "example": 30
-                },
-                "rate_type": {
-                    "type": "string",
-                    "example": "EFFECTIVE"
-                }
-            }
-        },
         "resources.CalculateMortgageRequest": {
             "type": "object",
             "required": [
-                "banco_id",
                 "cuota_inicial",
+                "dias_anio",
+                "frecuencia_pago",
                 "moneda",
                 "monto_prestamo",
                 "plazo_meses",
                 "precio_venta",
-                "tea",
-                "tipo_gracia"
+                "tasa_anual",
+                "tipo_gracia",
+                "tipo_tasa"
             ],
             "properties": {
-                "banco_id": {
-                    "type": "string"
-                },
                 "bono_techo_propio": {
                     "type": "number",
                     "minimum": 0
@@ -677,6 +530,12 @@
                 "cuota_inicial": {
                     "type": "number",
                     "minimum": 0
+                },
+                "dias_anio": {
+                    "type": "integer"
+                },
+                "frecuencia_pago": {
+                    "type": "integer"
                 },
                 "meses_gracia": {
                     "type": "integer",
@@ -698,11 +557,11 @@
                 "precio_venta": {
                     "type": "number"
                 },
-                "tasa_descuento": {
+                "tasa_anual": {
                     "type": "number",
                     "minimum": 0
                 },
-                "tea": {
+                "tasa_descuento": {
                     "type": "number",
                     "minimum": 0
                 },
@@ -712,6 +571,13 @@
                         "NONE",
                         "TOTAL",
                         "PARTIAL"
+                    ]
+                },
+                "tipo_tasa": {
+                    "type": "string",
+                    "enum": [
+                        "NOMINAL",
+                        "EFFECTIVE"
                     ]
                 }
             }
@@ -748,12 +614,6 @@
         "resources.MortgageResponse": {
             "type": "object",
             "properties": {
-                "banco_id": {
-                    "type": "string"
-                },
-                "banco_nombre": {
-                    "type": "string"
-                },
                 "bono_techo_propio": {
                     "type": "number"
                 },
@@ -800,13 +660,13 @@
                     "description": "Resultados calculados",
                     "type": "number"
                 },
+                "tasa_anual": {
+                    "type": "number"
+                },
                 "tasa_periodo": {
                     "type": "number"
                 },
                 "tcea": {
-                    "type": "number"
-                },
-                "tea": {
                     "type": "number"
                 },
                 "tipo_gracia": {
@@ -835,12 +695,6 @@
         "resources.MortgageSummaryResource": {
             "type": "object",
             "properties": {
-                "banco_id": {
-                    "type": "string"
-                },
-                "banco_nombre": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },
@@ -920,9 +774,6 @@
         "resources.UpdateMortgageRequest": {
             "type": "object",
             "properties": {
-                "banco_id": {
-                    "type": "string"
-                },
                 "bono_techo_propio": {
                     "type": "number",
                     "minimum": 0
@@ -957,11 +808,11 @@
                 "precio_venta": {
                     "type": "number"
                 },
-                "tasa_descuento": {
+                "tasa_anual": {
                     "type": "number",
                     "minimum": 0
                 },
-                "tea": {
+                "tasa_descuento": {
                     "type": "number",
                     "minimum": 0
                 },

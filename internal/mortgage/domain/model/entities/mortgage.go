@@ -15,8 +15,6 @@ type Mortgage struct {
 	bonoTechoPropio      float64 // Bono Techo Propio (subsidio)
 	interestRate         float64 // Tasa de interés (TNA o TEA según rateType)
 	rateType             valueobjects.RateType
-	bankID               *valueobjects.BankID
-	bankName             string
 	termMonths           int // Plazo en meses
 	gracePeriodMonths    int // Número de meses de gracia
 	gracePeriodType      valueobjects.GracePeriodType
@@ -82,8 +80,6 @@ func ReconstructMortgage(
 	gracePeriodMonths int,
 	gracePeriodType valueobjects.GracePeriodType,
 	currency valueobjects.Currency,
-	bankID *valueobjects.BankID,
-	bankName string,
 	paymentFrequencyDays int,
 	daysInYear int,
 	principalFinanced float64,
@@ -105,8 +101,6 @@ func ReconstructMortgage(
 		bonoTechoPropio:      bonoTechoPropio,
 		interestRate:         interestRate,
 		rateType:             rateType,
-		bankID:               bankID,
-		bankName:             bankName,
 		termMonths:           termMonths,
 		gracePeriodMonths:    gracePeriodMonths,
 		gracePeriodType:      gracePeriodType,
@@ -126,22 +120,14 @@ func ReconstructMortgage(
 }
 
 // Getters
-func (m *Mortgage) ID() valueobjects.MortgageID     { return m.id }
-func (m *Mortgage) UserID() valueobjects.UserID     { return m.userID }
-func (m *Mortgage) PropertyPrice() float64          { return m.propertyPrice }
-func (m *Mortgage) DownPayment() float64            { return m.downPayment }
-func (m *Mortgage) LoanAmount() float64             { return m.loanAmount }
-func (m *Mortgage) BonoTechoPropio() float64        { return m.bonoTechoPropio }
-func (m *Mortgage) InterestRate() float64           { return m.interestRate }
-func (m *Mortgage) RateType() valueobjects.RateType { return m.rateType }
-func (m *Mortgage) BankID() *valueobjects.BankID {
-	if m.bankID == nil {
-		return nil
-	}
-	value := *m.bankID
-	return &value
-}
-func (m *Mortgage) BankName() string                              { return m.bankName }
+func (m *Mortgage) ID() valueobjects.MortgageID                   { return m.id }
+func (m *Mortgage) UserID() valueobjects.UserID                   { return m.userID }
+func (m *Mortgage) PropertyPrice() float64                        { return m.propertyPrice }
+func (m *Mortgage) DownPayment() float64                          { return m.downPayment }
+func (m *Mortgage) LoanAmount() float64                           { return m.loanAmount }
+func (m *Mortgage) BonoTechoPropio() float64                      { return m.bonoTechoPropio }
+func (m *Mortgage) InterestRate() float64                         { return m.interestRate }
+func (m *Mortgage) RateType() valueobjects.RateType               { return m.rateType }
 func (m *Mortgage) TermMonths() int                               { return m.termMonths }
 func (m *Mortgage) GracePeriodMonths() int                        { return m.gracePeriodMonths }
 func (m *Mortgage) GracePeriodType() valueobjects.GracePeriodType { return m.gracePeriodType }
@@ -186,27 +172,4 @@ func (m *Mortgage) SetDaysInYear(value int) {
 	if value > 0 {
 		m.daysInYear = value
 	}
-}
-func (m *Mortgage) SetBank(bank *Bank) {
-	if bank == nil {
-		m.SetBankReference(nil, "")
-		return
-	}
-	id := bank.ID()
-	m.SetBankReference(&id, bank.Name())
-	m.rateType = bank.RateType()
-	m.paymentFrequencyDays = bank.PaymentFrequencyDays()
-	m.daysInYear = bank.DaysInYear()
-}
-
-// SetBankReference copies bank identifiers without loading the full aggregate.
-func (m *Mortgage) SetBankReference(bankID *valueobjects.BankID, bankName string) {
-	if bankID == nil {
-		m.bankID = nil
-		m.bankName = ""
-		return
-	}
-	id := *bankID
-	m.bankID = &id
-	m.bankName = bankName
 }
