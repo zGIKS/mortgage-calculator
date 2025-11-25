@@ -11,19 +11,16 @@ import (
 )
 
 type MortgageCommandServiceImpl struct {
-	repository     repositories.MortgageRepository
-	bankRepository repositories.BankRepository
-	calculator     *services.FrenchMethodCalculator
+	repository repositories.MortgageRepository
+	calculator *services.FrenchMethodCalculator
 }
 
 func NewMortgageCommandService(
 	repository repositories.MortgageRepository,
-	bankRepository repositories.BankRepository,
 ) services.MortgageCommandService {
 	return &MortgageCommandServiceImpl{
-		repository:     repository,
-		bankRepository: bankRepository,
-		calculator:     services.NewFrenchMethodCalculator(),
+		repository: repository,
+		calculator: services.NewFrenchMethodCalculator(),
 	}
 }
 
@@ -37,22 +34,11 @@ func (s *MortgageCommandServiceImpl) HandleCalculateMortgage(
 		return nil, err
 	}
 
-	// Fetch bank information (required)
-	bankID, err := valueobjects.NewBankID(*cmd.BankID)
+	// Validate and create RateType
+	rateType, err := valueobjects.NewRateType(cmd.RateType)
 	if err != nil {
 		return nil, err
 	}
-
-	bank, err := s.bankRepository.FindByID(ctx, bankID)
-	if err != nil {
-		return nil, err
-	}
-	if bank == nil {
-		return nil, errors.New("bank not found")
-	}
-
-	// Get rate type from bank
-	rateType := bank.RateType()
 
 	gracePeriodType, err := valueobjects.NewGracePeriodType(cmd.GracePeriodType)
 	if err != nil {
@@ -82,8 +68,9 @@ func (s *MortgageCommandServiceImpl) HandleCalculateMortgage(
 		return nil, err
 	}
 
-	// Attach bank configuration (rate type, payment frequency, days in year)
-	mortgage.SetBank(bank)
+	// Set payment configuration from command
+	mortgage.SetPaymentFrequencyDays(cmd.PaymentFrequencyDays)
+	mortgage.SetDaysInYear(cmd.DaysInYear)
 
 	// Calcular cronograma usando método francés
 	if err := s.calculator.Calculate(mortgage); err != nil {
@@ -146,8 +133,6 @@ func (s *MortgageCommandServiceImpl) HandleUpdateMortgage(
 			mortgage.GracePeriodMonths(),
 			mortgage.GracePeriodType(),
 			mortgage.Currency(),
-			mortgage.BankID(),
-			mortgage.BankName(),
 			mortgage.PaymentFrequencyDays(),
 			mortgage.DaysInYear(),
 			mortgage.PrincipalFinanced(),
@@ -196,8 +181,6 @@ func (s *MortgageCommandServiceImpl) HandleUpdateMortgage(
 			mortgage.GracePeriodMonths(),
 			mortgage.GracePeriodType(),
 			mortgage.Currency(),
-			mortgage.BankID(),
-			mortgage.BankName(),
 			mortgage.PaymentFrequencyDays(),
 			mortgage.DaysInYear(),
 			mortgage.PrincipalFinanced(),
@@ -210,19 +193,6 @@ func (s *MortgageCommandServiceImpl) HandleUpdateMortgage(
 			mortgage.TCEA(),
 			mortgage.CreatedAt(),
 		)
-		needsRecalculation = true
-	}
-
-	if cmd.BankID() != nil {
-		bankID, err := valueobjects.NewBankID(*cmd.BankID())
-		if err != nil {
-			return nil, err
-		}
-		bank, err := s.bankRepository.FindByID(ctx, bankID)
-		if err != nil {
-			return nil, err
-		}
-		mortgage.SetBank(bank)
 		needsRecalculation = true
 	}
 
@@ -262,8 +232,6 @@ func (s *MortgageCommandServiceImpl) HandleUpdateMortgage(
 			mortgage.GracePeriodMonths(),
 			gracePeriodType,
 			mortgage.Currency(),
-			mortgage.BankID(),
-			mortgage.BankName(),
 			mortgage.PaymentFrequencyDays(),
 			mortgage.DaysInYear(),
 			mortgage.PrincipalFinanced(),
@@ -302,8 +270,6 @@ func (s *MortgageCommandServiceImpl) HandleUpdateMortgage(
 			mortgage.GracePeriodMonths(),
 			mortgage.GracePeriodType(),
 			currency,
-			mortgage.BankID(),
-			mortgage.BankName(),
 			mortgage.PaymentFrequencyDays(),
 			mortgage.DaysInYear(),
 			mortgage.PrincipalFinanced(),
@@ -339,12 +305,11 @@ func (s *MortgageCommandServiceImpl) HandleUpdateMortgage(
 			return nil, err
 		}
 
-		// Mantener el ID original
+		// Mantener el ID original y configuración
 		updatedMortgage.SetID(mortgage.ID())
 		updatedMortgage.SetRateType(mortgage.RateType())
 		updatedMortgage.SetPaymentFrequencyDays(mortgage.PaymentFrequencyDays())
 		updatedMortgage.SetDaysInYear(mortgage.DaysInYear())
-		updatedMortgage.SetBankReference(mortgage.BankID(), mortgage.BankName())
 
 		// Recalcular
 		if err := s.calculator.Calculate(updatedMortgage); err != nil {

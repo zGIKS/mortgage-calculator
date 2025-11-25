@@ -147,13 +147,6 @@ func (r *MortgageRepositoryImpl) Delete(ctx context.Context, id valueobjects.Mor
 }
 
 func (r *MortgageRepositoryImpl) toModel(mortgage *entities.Mortgage) *models.MortgageModel {
-	var bankID *uuid.UUID
-	bankIDVO := mortgage.BankID()
-	if bankIDVO != nil {
-		value := bankIDVO.Value()
-		bankID = &value
-	}
-
 	return &models.MortgageModel{
 		ID:                   mortgage.ID().Value(),
 		UserID:               mortgage.UserID().Value(),
@@ -163,8 +156,6 @@ func (r *MortgageRepositoryImpl) toModel(mortgage *entities.Mortgage) *models.Mo
 		BonoTechoPropio:      mortgage.BonoTechoPropio(),
 		InterestRate:         mortgage.InterestRate(),
 		RateType:             mortgage.RateType().String(),
-		BankID:               bankID,
-		BankName:             mortgage.BankName(),
 		TermMonths:           mortgage.TermMonths(),
 		GracePeriodMonths:    mortgage.GracePeriodMonths(),
 		GracePeriodType:      mortgage.GracePeriodType().String(),
@@ -243,15 +234,6 @@ func (r *MortgageRepositoryImpl) toDomain(model *models.MortgageModel) (*entitie
 		return nil, err
 	}
 
-	var bankID *valueobjects.BankID
-	if model.BankID != nil && *model.BankID != uuid.Nil {
-		bid, err := valueobjects.NewBankID(*model.BankID)
-		if err != nil {
-			return nil, err
-		}
-		bankID = &bid
-	}
-
 	mortgage := entities.ReconstructMortgage(
 		id,
 		userID,
@@ -265,8 +247,6 @@ func (r *MortgageRepositoryImpl) toDomain(model *models.MortgageModel) (*entitie
 		model.GracePeriodMonths,
 		gracePeriodType,
 		currency,
-		bankID,
-		model.BankName,
 		model.PaymentFrequencyDays,
 		model.DaysInYear,
 		model.PrincipalFinanced,

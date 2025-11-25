@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"finanzas-backend/internal/shared/infrastructure/config"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -44,7 +45,6 @@ func NewDatabase(cfg *config.Config) (*gorm.DB, error) {
 func autoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&iamModels.UserModel{},
-		&mortgageModels.BankModel{},
 		&mortgageModels.MortgageModel{},
 		&mortgageModels.PaymentScheduleItemModel{},
 	)
