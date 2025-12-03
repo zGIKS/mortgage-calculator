@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"math"
 	"net/http"
 	"strconv"
 
@@ -56,6 +57,28 @@ func (c *MortgageController) CalculateMortgage(ctx *gin.Context) {
 
 	userID := userIDValue.(string)
 
+	frecuenciaPago := req.FrecuenciaPago
+	if frecuenciaPago == 0 && req.Frecuencia != "" {
+		switch req.Frecuencia {
+		case "MENSUAL":
+			frecuenciaPago = 30
+		case "BIMESTRAL":
+			frecuenciaPago = 60
+		case "TRIMESTRAL":
+			frecuenciaPago = 90
+		}
+	}
+
+	plazoMeses := req.PlazoMeses
+	if plazoMeses == 0 && req.NumeroAnios > 0 && frecuenciaPago > 0 {
+		plazoMeses = int(math.Round(float64(req.NumeroAnios) * (float64(req.DiasAnio) / float64(frecuenciaPago))))
+	}
+
+	npvRate := req.COK
+	if npvRate == 0 {
+		npvRate = req.TasaDescuento
+	}
+
 	cmd, err := commands.NewCalculateMortgageCommand(
 		userID,
 		req.PrecioVenta,
@@ -64,13 +87,21 @@ func (c *MortgageController) CalculateMortgage(ctx *gin.Context) {
 		req.BonoTechoPropio,
 		req.TasaAnual,
 		req.TipoTasa,
-		req.FrecuenciaPago,
+		frecuenciaPago,
 		req.DiasAnio,
-		req.PlazoMeses,
+		plazoMeses,
+		req.NumeroAnios,
 		req.MesesGracia,
 		req.TipoGracia,
 		req.Moneda,
-		req.TasaDescuento,
+		npvRate,
+		req.GastosAdm,
+		req.Portes,
+		req.CostosMensuales,
+		req.SeguroDesg,
+		req.SeguroInmueble,
+		req.ComisionEval,
+		req.ComisionDesem,
 	)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -214,6 +245,33 @@ func (c *MortgageController) UpdateMortgage(ctx *gin.Context) {
 		return
 	}
 
+	frecuenciaPago := req.FrecuenciaPago
+	if frecuenciaPago == nil && req.Frecuencia != nil {
+		val := 0
+		switch *req.Frecuencia {
+		case "MENSUAL":
+			val = 30
+		case "BIMESTRAL":
+			val = 60
+		case "TRIMESTRAL":
+			val = 90
+		}
+		if val > 0 {
+			frecuenciaPago = &val
+		}
+	}
+
+	plazoMeses := req.PlazoMeses
+	if (plazoMeses == nil || (plazoMeses != nil && *plazoMeses == 0)) && req.NumeroAnios != nil && frecuenciaPago != nil && req.DiasAnio != nil {
+		calculated := int(math.Round(float64(*req.NumeroAnios) * (float64(*req.DiasAnio) / float64(*frecuenciaPago))))
+		plazoMeses = &calculated
+	}
+
+	discountRate := req.COK
+	if discountRate == nil {
+		discountRate = req.TasaDescuento
+	}
+
 	cmd, err := commands.NewUpdateMortgageCommand(
 		mortgageID,
 		req.PrecioVenta,
@@ -222,13 +280,21 @@ func (c *MortgageController) UpdateMortgage(ctx *gin.Context) {
 		req.BonoTechoPropio,
 		req.TasaAnual,
 		req.TipoTasa,
-		req.FrecuenciaPago,
+		frecuenciaPago,
 		req.DiasAnio,
-		req.PlazoMeses,
+		plazoMeses,
+		req.NumeroAnios,
 		req.MesesGracia,
 		req.TipoGracia,
 		req.Moneda,
-		req.TasaDescuento,
+		discountRate,
+		req.GastosAdm,
+		req.Portes,
+		req.CostosMensuales,
+		req.SeguroDesg,
+		req.SeguroInmueble,
+		req.ComisionEval,
+		req.ComisionDesem,
 	)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})

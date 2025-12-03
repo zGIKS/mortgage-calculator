@@ -23,8 +23,20 @@ func (fmc *FrenchMethodCalculator) Calculate(mortgage *entities.Mortgage) error 
 	}
 	mortgage.SetPrincipalFinanced(principalFinanced)
 
-	// 2. Convertir tasa de interés a tasa efectiva por periodo según la frecuencia
 	periodsPerYear := mortgage.PeriodsPerYear()
+	if periodsPerYear <= 0 {
+		return errors.New("periods per year must be greater than zero")
+	}
+
+	totalPeriods := mortgage.TermMonths()
+	if totalPeriods <= 0 && mortgage.TermYears() > 0 {
+		totalPeriods = int(math.Round(periodsPerYear * float64(mortgage.TermYears())))
+	}
+	if totalPeriods <= 0 {
+		return errors.New("term months must be greater than zero")
+	}
+
+	// 2. Convertir tasa de interés a tasa efectiva por periodo según la frecuencia
 	periodicRate, err := fmc.convertToPeriodicRate(mortgage.InterestRate(), mortgage.RateType(), periodsPerYear)
 	if err != nil {
 		return err
@@ -37,6 +49,9 @@ func (fmc *FrenchMethodCalculator) Calculate(mortgage *entities.Mortgage) error 
 
 	if mortgage.GracePeriodType() != valueobjects.GracePeriodNone && mortgage.GracePeriodMonths() > 0 {
 		gracePeriods = mortgage.GracePeriodMonths()
+		if gracePeriods > totalPeriods {
+			return errors.New("grace period months must be less than total periods")
+		}
 
 		if mortgage.GracePeriodType() == valueobjects.GracePeriodTotal {
 			// P_gracia = P * (1 + i)^n_gracia
@@ -46,7 +61,7 @@ func (fmc *FrenchMethodCalculator) Calculate(mortgage *entities.Mortgage) error 
 
 	// 4. Calcular cuota fija para periodos posteriores a la gracia
 	// A = P * [i(1+i)^n] / [(1+i)^n - 1]
-	normalPeriods := mortgage.TermMonths() - gracePeriods
+	normalPeriods := totalPeriods - gracePeriods
 	if normalPeriods <= 0 {
 		return errors.New("term months must be greater than grace period months")
 	}
@@ -54,8 +69,25 @@ func (fmc *FrenchMethodCalculator) Calculate(mortgage *entities.Mortgage) error 
 	fixedInstallment := fmc.calculateFixedInstallment(adjustedPrincipal, periodicRate, normalPeriods)
 	mortgage.SetFixedInstallment(fixedInstallment)
 
-	// 5. Generar cronograma de pagos
-	schedule, err := fmc.generatePaymentSchedule(mortgage, adjustedPrincipal, periodicRate)
+	// 5. Generar cronograma de pagos con cargos adicionales
+	lifeRate := normalizeRate(mortgage.LifeInsuranceRate())
+	propertyRate := normalizeRate(mortgage.PropertyInsuranceRate())
+	propertyInsurancePerPeriod := 0.0
+	if propertyRate > 0 {
+		propertyInsurancePerPeriod = mortgage.PropertyPrice() * propertyRate / periodsPerYear
+	}
+
+	schedule, err := fmc.generatePaymentSchedule(
+		mortgage,
+		periodicRate,
+		totalPeriods,
+		propertyInsurancePerPeriod,
+		lifeRate,
+		mortgage.AdministrationFee(),
+		mortgage.Portes(),
+		mortgage.AdditionalCosts(),
+		periodsPerYear,
+	)
 	if err != nil {
 		return err
 	}
@@ -64,6 +96,10 @@ func (fmc *FrenchMethodCalculator) Calculate(mortgage *entities.Mortgage) error 
 	// 6. Calcular totales
 	mortgage.SetTotalInterestPaid(schedule.TotalInterestPaid())
 	mortgage.SetTotalPaid(schedule.TotalPaid())
+	mortgage.SetTotalPaidWithFees(schedule.TotalPaidWithCharges())
+	mortgage.SetTotalCharges(schedule.TotalCharges())
+	mortgage.SetTotalInsurance(schedule.TotalInsurance())
+	mortgage.SetTotalAdmin(schedule.TotalAdminFees())
 
 	return nil
 }
@@ -115,21 +151,29 @@ func (fmc *FrenchMethodCalculator) calculateFixedInstallment(principal, periodic
 // generatePaymentSchedule genera el cronograma completo de pagos
 func (fmc *FrenchMethodCalculator) generatePaymentSchedule(
 	mortgage *entities.Mortgage,
-	adjustedPrincipal float64,
 	periodicRate float64,
+	totalPeriods int,
+	propertyInsurancePerPeriod float64,
+	lifeInsuranceRate float64,
+	administrationFee float64,
+	portes float64,
+	additionalCosts float64,
+	periodsPerYear float64,
 ) (*entities.PaymentSchedule, error) {
 	schedule := entities.NewPaymentSchedule()
 	balance := mortgage.PrincipalFinanced() // Saldo inicial (antes de gracia)
 
-	totalMonths := mortgage.TermMonths()
 	gracePeriods := 0
 	if mortgage.GracePeriodType() != valueobjects.GracePeriodNone {
 		gracePeriods = mortgage.GracePeriodMonths()
 	}
 
-	for period := 1; period <= totalMonths; period++ {
+	for period := 1; period <= totalPeriods; period++ {
 		var item entities.PaymentScheduleItem
 		item.Period = period
+		item.YearNumber = int(math.Ceil(float64(period) / periodsPerYear))
+		item.PeriodicRateApplied = periodicRate
+		item.GraceType = mortgage.GracePeriodType().String()
 
 		// Determinar si es periodo de gracia
 		isGracePeriod := gracePeriods > 0 && period <= gracePeriods
@@ -168,6 +212,19 @@ func (fmc *FrenchMethodCalculator) generatePaymentSchedule(
 			balance -= item.Amortization
 		}
 
+		// Seguros y gastos adicionales
+		item.LifeInsurance = balance * lifeInsuranceRate
+		item.PropertyInsurance = propertyInsurancePerPeriod
+		item.AdministrationFee = administrationFee
+		item.Portes = portes
+		item.AdditionalCosts = additionalCosts
+		item.TotalInstallment = item.Installment +
+			item.LifeInsurance +
+			item.PropertyInsurance +
+			item.AdministrationFee +
+			item.Portes +
+			item.AdditionalCosts
+
 		// Redondear para evitar errores de precisión
 		if balance < 0.01 && balance > -0.01 {
 			balance = 0
@@ -180,85 +237,126 @@ func (fmc *FrenchMethodCalculator) generatePaymentSchedule(
 	return schedule, nil
 }
 
-// CalculateNPV calcula el Valor Actual Neto (VAN)
+// CalculateNPV calcula el Valor Actual Neto (VAN) considerando todos los cargos
 // VAN = suma de [CF_k / (1 + j)^k] donde j es la tasa de descuento
 func (fmc *FrenchMethodCalculator) CalculateNPV(mortgage *entities.Mortgage, discountRate float64) (float64, error) {
 	if mortgage.PaymentSchedule() == nil {
 		return 0, errors.New("payment schedule not calculated")
 	}
 
-	periodsPerYear := mortgage.PeriodsPerYear()
+	flows := fmc.buildCashFlows(mortgage, true)
+	if len(flows) == 0 {
+		return 0, errors.New("no cash flows to evaluate")
+	}
+
 	periodicDiscountRate, err := fmc.convertToPeriodicRate(
 		discountRate,
 		valueobjects.RateTypeEffective,
-		periodsPerYear,
+		mortgage.PeriodsPerYear(),
 	)
 	if err != nil {
 		return 0, err
 	}
 
-	// Flujo inicial: desembolso del préstamo (negativo)
-	npv := -mortgage.PrincipalFinanced()
-
-	// Sumar flujos de cada periodo (cuotas pagadas)
-	items := mortgage.PaymentSchedule().GetItems()
-	for _, item := range items {
-		// CF_k / (1 + j)^k
-		discountFactor := math.Pow(1+periodicDiscountRate, float64(item.Period))
-		npv += item.Installment / discountFactor
+	npv := 0.0
+	for idx, cf := range flows {
+		npv += cf / math.Pow(1+periodicDiscountRate, float64(idx))
 	}
 
 	return npv, nil
 }
 
-// CalculateIRR calcula la Tasa Interna de Retorno (TIR) usando método de Newton-Raphson
-// TIR es la tasa que hace VAN = 0
+// CalculateIRR calcula la Tasa Interna de Retorno (TIR) de la cuota base
 func (fmc *FrenchMethodCalculator) CalculateIRR(mortgage *entities.Mortgage) (float64, error) {
 	if mortgage.PaymentSchedule() == nil {
 		return 0, errors.New("payment schedule not calculated")
 	}
 
-	// Método de Newton-Raphson para encontrar TIR
-	// Empezamos con una estimación inicial (tasa periódica del préstamo)
-	irr := mortgage.PeriodicRate()
+	flows := fmc.buildCashFlows(mortgage, false)
+	return fmc.irrFromFlows(flows, mortgage.PeriodicRate())
+}
+
+// CalculateFlowIRR calcula la TIR considerando seguros, gastos y comisiones
+func (fmc *FrenchMethodCalculator) CalculateFlowIRR(mortgage *entities.Mortgage) (float64, error) {
+	if mortgage.PaymentSchedule() == nil {
+		return 0, errors.New("payment schedule not calculated")
+	}
+
+	flows := fmc.buildCashFlows(mortgage, true)
+	return fmc.irrFromFlows(flows, mortgage.PeriodicRate())
+}
+
+func (fmc *FrenchMethodCalculator) buildCashFlows(mortgage *entities.Mortgage, includeCharges bool) []float64 {
+	if mortgage.PaymentSchedule() == nil {
+		return nil
+	}
+
+	initial := mortgage.PrincipalFinanced()
+	if includeCharges {
+		initial = initial - mortgage.EvaluationFee() - mortgage.DisbursementFee()
+	}
+
+	flows := make([]float64, 0, len(mortgage.PaymentSchedule().GetItems())+1)
+	flows = append(flows, initial)
+
+	for _, item := range mortgage.PaymentSchedule().GetItems() {
+		payment := item.Installment
+		if includeCharges {
+			payment = item.TotalInstallment
+		}
+		flows = append(flows, -payment)
+	}
+
+	return flows
+}
+
+func (fmc *FrenchMethodCalculator) irrFromFlows(flows []float64, guess float64) (float64, error) {
+	if len(flows) == 0 {
+		return 0, errors.New("no cash flows to evaluate")
+	}
+
+	irr := guess
+	if irr == 0 {
+		irr = 0.01
+	}
 	tolerance := 0.0000001
 	maxIterations := 1000
 
-	items := mortgage.PaymentSchedule().GetItems()
-	principal := mortgage.PrincipalFinanced()
-
 	for i := 0; i < maxIterations; i++ {
-		// Calcular VAN y su derivada
-		npv := -principal
+		npv := 0.0
 		npvDerivative := 0.0
 
-		for _, item := range items {
-			period := float64(item.Period)
-			cashFlow := item.Installment
-
+		for idx, cashFlow := range flows {
+			period := float64(idx)
 			factor := math.Pow(1+irr, period)
 			npv += cashFlow / factor
-			npvDerivative -= cashFlow * period / (factor * (1 + irr))
+			if period > 0 {
+				npvDerivative -= cashFlow * period / (factor * (1 + irr))
+			}
 		}
 
-		// Si VAN es suficientemente cercano a 0, hemos encontrado la TIR
 		if math.Abs(npv) < tolerance {
 			return irr, nil
 		}
 
-		// Actualizar estimación usando Newton-Raphson
 		if npvDerivative == 0 {
 			return 0, errors.New("cannot calculate IRR, derivative is zero")
 		}
 		irr = irr - npv/npvDerivative
 
-		// Verificar que la TIR sea razonable
 		if irr < -1 || irr > 10 {
 			return 0, errors.New("IRR calculation diverged")
 		}
 	}
 
-	return irr, nil
+	return irr, errors.New("IRR did not converge")
+}
+
+func normalizeRate(rate float64) float64 {
+	if rate > 1 {
+		return rate / 100
+	}
+	return rate
 }
 
 // CalculateTCEA calcula la Tasa de Costo Efectivo Anual ajustada a la frecuencia configurada.

@@ -8,6 +8,7 @@ import (
 	"finanzas-backend/internal/mortgage/domain/model/valueobjects"
 	"finanzas-backend/internal/mortgage/domain/repositories"
 	"finanzas-backend/internal/mortgage/domain/services"
+	"math"
 )
 
 type MortgageCommandServiceImpl struct {
@@ -60,9 +61,17 @@ func (s *MortgageCommandServiceImpl) HandleCalculateMortgage(
 		cmd.InterestRate,
 		rateType,
 		cmd.TermMonths,
+		cmd.TermYears,
 		cmd.GracePeriodMonths,
 		gracePeriodType,
 		currency,
+		cmd.AdministrationFee,
+		cmd.Portes,
+		cmd.AdditionalCosts,
+		cmd.LifeInsuranceRate,
+		cmd.PropertyInsurance,
+		cmd.EvaluationFee,
+		cmd.DisbursementFee,
 	)
 	if err != nil {
 		return nil, err
@@ -86,15 +95,21 @@ func (s *MortgageCommandServiceImpl) HandleCalculateMortgage(
 		mortgage.SetNPV(npv)
 	}
 
-	// Calcular TIR
+	// Calcular TIR de cuota base
 	irr, err := s.calculator.CalculateIRR(mortgage)
 	if err != nil {
 		return nil, err
 	}
 	mortgage.SetIRR(irr)
 
-	// Calcular TCEA
-	tcea := s.calculator.CalculateTCEA(irr, mortgage.PeriodsPerYear())
+	flowIRR, err := s.calculator.CalculateFlowIRR(mortgage)
+	if err != nil {
+		return nil, err
+	}
+	mortgage.SetFlowIRR(flowIRR)
+
+	// Calcular TCEA con flujos completos
+	tcea := s.calculator.CalculateTCEA(flowIRR, mortgage.PeriodsPerYear())
 	mortgage.SetTCEA(tcea)
 
 	// Guardar en repositorio
@@ -115,229 +130,234 @@ func (s *MortgageCommandServiceImpl) HandleUpdateMortgage(
 		return nil, err
 	}
 
-	// Variables para recálculo
+	// Valores base actuales
+	propertyPrice := mortgage.PropertyPrice()
+	downPayment := mortgage.DownPayment()
+	loanAmount := mortgage.LoanAmount()
+	bono := mortgage.BonoTechoPropio()
+	interestRate := mortgage.InterestRate()
+	rateType := mortgage.RateType()
+	paymentFrequencyDays := mortgage.PaymentFrequencyDays()
+	daysInYear := mortgage.DaysInYear()
+	termMonths := mortgage.TermMonths()
+	termYears := mortgage.TermYears()
+	graceMonths := mortgage.GracePeriodMonths()
+	graceType := mortgage.GracePeriodType()
+	currency := mortgage.Currency()
+	adminFee := mortgage.AdministrationFee()
+	portes := mortgage.Portes()
+	additionalCosts := mortgage.AdditionalCosts()
+	lifeInsurance := mortgage.LifeInsuranceRate()
+	propertyInsurance := mortgage.PropertyInsuranceRate()
+	evaluationFee := mortgage.EvaluationFee()
+	disbursementFee := mortgage.DisbursementFee()
+
+	discountRate := valueOrDefault(cmd.NPVDiscountRate(), 0)
 	needsRecalculation := false
 
-	// Actualizar campos si se proporcionan
+	// Aplicar cambios del comando
 	if cmd.PropertyPrice() != nil {
-		mortgage = entities.ReconstructMortgage(
-			mortgage.ID(),
-			mortgage.UserID(),
-			*cmd.PropertyPrice(),
-			mortgage.DownPayment(),
-			mortgage.LoanAmount(),
-			mortgage.BonoTechoPropio(),
-			mortgage.InterestRate(),
-			mortgage.RateType(),
-			mortgage.TermMonths(),
-			mortgage.GracePeriodMonths(),
-			mortgage.GracePeriodType(),
-			mortgage.Currency(),
-			mortgage.PaymentFrequencyDays(),
-			mortgage.DaysInYear(),
-			mortgage.PrincipalFinanced(),
-			mortgage.PeriodicRate(),
-			mortgage.FixedInstallment(),
-			mortgage.TotalInterestPaid(),
-			mortgage.TotalPaid(),
-			mortgage.NPV(),
-			mortgage.IRR(),
-			mortgage.TCEA(),
-			mortgage.CreatedAt(),
-		)
+		propertyPrice = *cmd.PropertyPrice()
+		needsRecalculation = true
 	}
-
 	if cmd.DownPayment() != nil {
+		downPayment = *cmd.DownPayment()
 		needsRecalculation = true
 	}
-
 	if cmd.LoanAmount() != nil {
+		loanAmount = *cmd.LoanAmount()
 		needsRecalculation = true
 	}
-
 	if cmd.BonoTechoPropio() != nil {
+		bono = *cmd.BonoTechoPropio()
 		needsRecalculation = true
 	}
-
 	if cmd.InterestRate() != nil {
+		interestRate = *cmd.InterestRate()
 		needsRecalculation = true
 	}
-
 	if cmd.RateType() != nil {
-		rateType, err := valueobjects.NewRateType(*cmd.RateType())
+		newRate, err := valueobjects.NewRateType(*cmd.RateType())
 		if err != nil {
 			return nil, err
 		}
-		mortgage = entities.ReconstructMortgage(
-			mortgage.ID(),
-			mortgage.UserID(),
-			mortgage.PropertyPrice(),
-			mortgage.DownPayment(),
-			mortgage.LoanAmount(),
-			mortgage.BonoTechoPropio(),
-			mortgage.InterestRate(),
-			rateType,
-			mortgage.TermMonths(),
-			mortgage.GracePeriodMonths(),
-			mortgage.GracePeriodType(),
-			mortgage.Currency(),
-			mortgage.PaymentFrequencyDays(),
-			mortgage.DaysInYear(),
-			mortgage.PrincipalFinanced(),
-			mortgage.PeriodicRate(),
-			mortgage.FixedInstallment(),
-			mortgage.TotalInterestPaid(),
-			mortgage.TotalPaid(),
-			mortgage.NPV(),
-			mortgage.IRR(),
-			mortgage.TCEA(),
-			mortgage.CreatedAt(),
-		)
+		rateType = newRate
 		needsRecalculation = true
 	}
-
 	if cmd.PaymentFrequencyDays() != nil {
-		mortgage.SetPaymentFrequencyDays(*cmd.PaymentFrequencyDays())
+		paymentFrequencyDays = *cmd.PaymentFrequencyDays()
 		needsRecalculation = true
 	}
-
 	if cmd.DaysInYear() != nil {
-		mortgage.SetDaysInYear(*cmd.DaysInYear())
+		daysInYear = *cmd.DaysInYear()
 		needsRecalculation = true
 	}
-
 	if cmd.TermMonths() != nil {
+		termMonths = *cmd.TermMonths()
 		needsRecalculation = true
 	}
-
+	if cmd.TermYears() != nil {
+		termYears = *cmd.TermYears()
+		needsRecalculation = true
+	}
 	if cmd.GracePeriodMonths() != nil {
+		graceMonths = *cmd.GracePeriodMonths()
 		needsRecalculation = true
 	}
-
 	if cmd.GracePeriodType() != nil {
-		gracePeriodType, err := valueobjects.NewGracePeriodType(*cmd.GracePeriodType())
+		newGrace, err := valueobjects.NewGracePeriodType(*cmd.GracePeriodType())
 		if err != nil {
 			return nil, err
 		}
-		mortgage = entities.ReconstructMortgage(
-			mortgage.ID(),
-			mortgage.UserID(),
-			mortgage.PropertyPrice(),
-			mortgage.DownPayment(),
-			mortgage.LoanAmount(),
-			mortgage.BonoTechoPropio(),
-			mortgage.InterestRate(),
-			mortgage.RateType(),
-			mortgage.TermMonths(),
-			mortgage.GracePeriodMonths(),
-			gracePeriodType,
-			mortgage.Currency(),
-			mortgage.PaymentFrequencyDays(),
-			mortgage.DaysInYear(),
-			mortgage.PrincipalFinanced(),
-			mortgage.PeriodicRate(),
-			mortgage.FixedInstallment(),
-			mortgage.TotalInterestPaid(),
-			mortgage.TotalPaid(),
-			mortgage.NPV(),
-			mortgage.IRR(),
-			mortgage.TCEA(),
-			mortgage.CreatedAt(),
-		)
+		graceType = newGrace
 		needsRecalculation = true
 	}
-
 	if cmd.Currency() != nil {
 		// Validación: Si cambia moneda, DEBE actualizar todos los montos
 		if cmd.PropertyPrice() == nil || cmd.DownPayment() == nil || cmd.LoanAmount() == nil {
 			return nil, errors.New("when changing currency, you must update all monetary amounts (property_price, down_payment, loan_amount)")
 		}
-
-		currency, err := valueobjects.NewCurrency(*cmd.Currency())
+		newCurrency, err := valueobjects.NewCurrency(*cmd.Currency())
 		if err != nil {
 			return nil, err
 		}
-		mortgage = entities.ReconstructMortgage(
-			mortgage.ID(),
-			mortgage.UserID(),
-			mortgage.PropertyPrice(),
-			mortgage.DownPayment(),
-			mortgage.LoanAmount(),
-			mortgage.BonoTechoPropio(),
-			mortgage.InterestRate(),
-			mortgage.RateType(),
-			mortgage.TermMonths(),
-			mortgage.GracePeriodMonths(),
-			mortgage.GracePeriodType(),
-			currency,
-			mortgage.PaymentFrequencyDays(),
-			mortgage.DaysInYear(),
-			mortgage.PrincipalFinanced(),
-			mortgage.PeriodicRate(),
-			mortgage.FixedInstallment(),
-			mortgage.TotalInterestPaid(),
-			mortgage.TotalPaid(),
-			mortgage.NPV(),
-			mortgage.IRR(),
-			mortgage.TCEA(),
-			mortgage.CreatedAt(),
-		)
+		currency = newCurrency
+		needsRecalculation = true
+	}
+	if cmd.AdministrationFee() != nil {
+		adminFee = *cmd.AdministrationFee()
+		needsRecalculation = true
+	}
+	if cmd.Portes() != nil {
+		portes = *cmd.Portes()
+		needsRecalculation = true
+	}
+	if cmd.AdditionalCosts() != nil {
+		additionalCosts = *cmd.AdditionalCosts()
+		needsRecalculation = true
+	}
+	if cmd.LifeInsuranceRate() != nil {
+		lifeInsurance = *cmd.LifeInsuranceRate()
+		needsRecalculation = true
+	}
+	if cmd.PropertyInsurance() != nil {
+		propertyInsurance = *cmd.PropertyInsurance()
+		needsRecalculation = true
+	}
+	if cmd.EvaluationFee() != nil {
+		evaluationFee = *cmd.EvaluationFee()
+		needsRecalculation = true
+	}
+	if cmd.DisbursementFee() != nil {
+		disbursementFee = *cmd.DisbursementFee()
 		needsRecalculation = true
 	}
 
-	// Recalcular si es necesario
+	// Recalcular si corresponde
 	if needsRecalculation {
-		// Crear nueva entidad con valores actualizados para recalcular
-		updatedMortgage, err := entities.NewMortgage(
+		if termMonths <= 0 && termYears > 0 && paymentFrequencyDays > 0 && daysInYear > 0 {
+			periodsPerYear := float64(daysInYear) / float64(paymentFrequencyDays)
+			termMonths = int(math.Round(periodsPerYear * float64(termYears)))
+		}
+
+		calculated, err := entities.NewMortgage(
 			mortgage.UserID(),
-			valueOrDefault(cmd.PropertyPrice(), mortgage.PropertyPrice()),
-			valueOrDefault(cmd.DownPayment(), mortgage.DownPayment()),
-			valueOrDefault(cmd.LoanAmount(), mortgage.LoanAmount()),
-			valueOrDefault(cmd.BonoTechoPropio(), mortgage.BonoTechoPropio()),
-			valueOrDefault(cmd.InterestRate(), mortgage.InterestRate()),
-			mortgage.RateType(),
-			valueOrDefaultInt(cmd.TermMonths(), mortgage.TermMonths()),
-			valueOrDefaultInt(cmd.GracePeriodMonths(), mortgage.GracePeriodMonths()),
-			mortgage.GracePeriodType(),
-			mortgage.Currency(),
+			propertyPrice,
+			downPayment,
+			loanAmount,
+			bono,
+			interestRate,
+			rateType,
+			termMonths,
+			termYears,
+			graceMonths,
+			graceType,
+			currency,
+			adminFee,
+			portes,
+			additionalCosts,
+			lifeInsurance,
+			propertyInsurance,
+			evaluationFee,
+			disbursementFee,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		// Mantener el ID original y configuración
-		updatedMortgage.SetID(mortgage.ID())
-		updatedMortgage.SetRateType(mortgage.RateType())
-		updatedMortgage.SetPaymentFrequencyDays(mortgage.PaymentFrequencyDays())
-		updatedMortgage.SetDaysInYear(mortgage.DaysInYear())
+		calculated.SetPaymentFrequencyDays(paymentFrequencyDays)
+		calculated.SetDaysInYear(daysInYear)
 
-		// Recalcular
-		if err := s.calculator.Calculate(updatedMortgage); err != nil {
+		if err := s.calculator.Calculate(calculated); err != nil {
 			return nil, err
 		}
 
 		// Calcular VAN si se proporciona tasa de descuento
-		discountRate := valueOrDefault(cmd.NPVDiscountRate(), 0)
 		if discountRate > 0 {
-			npv, err := s.calculator.CalculateNPV(updatedMortgage, discountRate)
+			npv, err := s.calculator.CalculateNPV(calculated, discountRate)
 			if err != nil {
 				return nil, err
 			}
-			updatedMortgage.SetNPV(npv)
+			calculated.SetNPV(npv)
 		}
 
-		// Calcular TIR
-		irr, err := s.calculator.CalculateIRR(updatedMortgage)
+		// Calcular TIR para cuota base y flujos completos
+		irr, err := s.calculator.CalculateIRR(calculated)
 		if err != nil {
 			return nil, err
 		}
-		updatedMortgage.SetIRR(irr)
+		calculated.SetIRR(irr)
 
-		// Calcular TCEA
-		tcea := s.calculator.CalculateTCEA(irr, updatedMortgage.PeriodsPerYear())
-		updatedMortgage.SetTCEA(tcea)
+		flowIRR, err := s.calculator.CalculateFlowIRR(calculated)
+		if err != nil {
+			return nil, err
+		}
+		calculated.SetFlowIRR(flowIRR)
 
-		mortgage = updatedMortgage
+		// Calcular TCEA con flujos completos
+		tcea := s.calculator.CalculateTCEA(flowIRR, calculated.PeriodsPerYear())
+		calculated.SetTCEA(tcea)
+
+		// Reconstruir conservando metadata original
+		mortgage = entities.ReconstructMortgage(
+			mortgage.ID(),
+			mortgage.UserID(),
+			propertyPrice,
+			downPayment,
+			loanAmount,
+			bono,
+			interestRate,
+			rateType,
+			termMonths,
+			termYears,
+			graceMonths,
+			graceType,
+			currency,
+			paymentFrequencyDays,
+			daysInYear,
+			adminFee,
+			portes,
+			additionalCosts,
+			lifeInsurance,
+			propertyInsurance,
+			evaluationFee,
+			disbursementFee,
+			calculated.PrincipalFinanced(),
+			calculated.PeriodicRate(),
+			calculated.FixedInstallment(),
+			calculated.TotalInterestPaid(),
+			calculated.TotalPaid(),
+			calculated.TotalPaidWithFees(),
+			calculated.TotalCharges(),
+			calculated.TotalInsurance(),
+			calculated.TotalAdmin(),
+			calculated.NPV(),
+			calculated.IRR(),
+			calculated.FlowIRR(),
+			calculated.TCEA(),
+			mortgage.CreatedAt(),
+		)
+		mortgage.SetPaymentSchedule(calculated.PaymentSchedule())
 	}
 
 	// Actualizar en repositorio
