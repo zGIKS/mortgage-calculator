@@ -162,7 +162,7 @@ func setupIAMContext(router *gin.Engine, db *gorm.DB, cfg *config.Config, profil
 		iamGroup.POST("/login", userController.Login)
 
 		// Protected routes
-		iamGroup.PUT("/profile", authMiddleware, userController.UpdateProfile)
+		iamGroup.PUT("/password", authMiddleware, userController.UpdatePassword)
 	}
 
 	return iamFacade

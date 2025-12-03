@@ -67,7 +67,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/iam/profile": {
+        "/api/v1/iam/password": {
             "put": {
                 "security": [
                     {
@@ -84,10 +84,10 @@ const docTemplate = `{
                 "tags": [
                     "IAM"
                 ],
-                "summary": "Update user profile",
+                "summary": "Update user password",
                 "parameters": [
                     {
-                        "description": "Update user request",
+                        "description": "Update password request",
                         "name": "request",
                         "in": "body",
                         "required": true,

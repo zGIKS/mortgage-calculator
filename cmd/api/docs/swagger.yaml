@@ -362,13 +362,13 @@ paths:
       summary: User login
       tags:
       - IAM
-  /api/v1/iam/profile:
+  /api/v1/iam/password:
     put:
       consumes:
       - application/json
       description: Update authenticated user's password
       parameters:
-      - description: Update user request
+      - description: Update password request
         in: body
         name: request
         required: true
@@ -395,7 +395,7 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: Update user profile
+      summary: Update user password
       tags:
       - IAM
   /api/v1/iam/register:
