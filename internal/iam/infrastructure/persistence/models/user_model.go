@@ -12,7 +12,6 @@ type UserModel struct {
 	ID           uuid.UUID `gorm:"type:uuid;primaryKey;column:id"`
 	Email        string    `gorm:"uniqueIndex;not null;column:email"`
 	PasswordHash string    `gorm:"not null;column:password_hash"`
-	FullName     string    `gorm:"not null;column:full_name"`
 	CreatedAt    time.Time `gorm:"autoCreateTime;column:created_at"`
 	UpdatedAt    time.Time `gorm:"autoUpdateTime;column:updated_at"`
 }
@@ -34,7 +33,7 @@ func (m *UserModel) ToEntity() (*entities.User, error) {
 
 	password := valueobjects.NewPasswordFromHash(m.PasswordHash)
 
-	return entities.ReconstructUser(userID, email, password, m.FullName, m.CreatedAt, m.UpdatedAt), nil
+	return entities.ReconstructUser(userID, email, password, m.CreatedAt, m.UpdatedAt), nil
 }
 
 func FromEntity(user *entities.User) *UserModel {
@@ -42,7 +41,6 @@ func FromEntity(user *entities.User) *UserModel {
 		ID:           user.ID().Value(),
 		Email:        user.Email().Value(),
 		PasswordHash: user.Password().Hash(),
-		FullName:     user.FullName(),
 		CreatedAt:    user.CreatedAt(),
 		UpdatedAt:    user.UpdatedAt(),
 	}

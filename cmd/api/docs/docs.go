@@ -74,7 +74,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update authenticated user's email, password, and/or full name",
+                "description": "Update authenticated user's password",
                 "consumes": [
                     "application/json"
                 ],
@@ -120,22 +120,13 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
                     }
                 }
             }
         },
         "/api/v1/iam/register": {
             "post": {
-                "description": "Register a new user with email, password, and full name",
+                "description": "Register a new user with DNI, email and password",
                 "consumes": [
                     "application/json"
                 ],
@@ -512,6 +503,116 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/v1/profile": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get authenticated user's profile",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "Get profile",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resources.ProfileResource"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update authenticated user's profile",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "Update profile",
+                "parameters": [
+                    {
+                        "description": "Update profile request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/resources.UpdateProfileResource"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/resources.ProfileResource"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -754,22 +855,82 @@ const docTemplate = `{
                 }
             }
         },
-        "resources.RegisterUserResource": {
+        "resources.ProfileResource": {
             "type": "object",
-            "required": [
-                "email",
-                "full_name",
-                "password"
-            ],
             "properties": {
-                "email": {
+                "created_at": {
                     "type": "string",
-                    "example": "user@example.com"
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "PEN"
+                },
+                "dni": {
+                    "type": "string",
+                    "example": "46027897"
+                },
+                "first_last_name": {
+                    "type": "string",
+                    "example": "DELGADO"
+                },
+                "first_name": {
+                    "type": "string",
+                    "example": "ROXANA KARINA"
                 },
                 "full_name": {
                     "type": "string",
-                    "minLength": 2,
-                    "example": "John Doe"
+                    "example": "DELGADO CUELLAR ROXANA KARINA"
+                },
+                "has_own_land": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "id": {
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                },
+                "is_first_home": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "marital_status": {
+                    "type": "string",
+                    "example": "SOLTERO"
+                },
+                "monthly_income": {
+                    "type": "number",
+                    "example": 5000
+                },
+                "phone_number": {
+                    "type": "string",
+                    "example": "987654321"
+                },
+                "second_last_name": {
+                    "type": "string",
+                    "example": "CUELLAR"
+                },
+                "user_id": {
+                    "type": "string",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                }
+            }
+        },
+        "resources.RegisterUserResource": {
+            "type": "object",
+            "required": [
+                "dni",
+                "email",
+                "password"
+            ],
+            "properties": {
+                "dni": {
+                    "type": "string",
+                    "example": "12345678"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
                 },
                 "password": {
                     "type": "string",
@@ -840,18 +1001,52 @@ const docTemplate = `{
                 }
             }
         },
-        "resources.UpdateUserResource": {
+        "resources.UpdateProfileResource": {
             "type": "object",
             "properties": {
-                "email": {
+                "currency": {
                     "type": "string",
-                    "example": "newemail@example.com"
+                    "enum": [
+                        "PEN",
+                        "USD"
+                    ],
+                    "example": "USD"
                 },
-                "full_name": {
+                "has_own_land": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_first_home": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "marital_status": {
                     "type": "string",
-                    "minLength": 2,
-                    "example": "Jane Doe"
+                    "enum": [
+                        "SOLTERO",
+                        "CASADO",
+                        "DIVORCIADO",
+                        "VIUDO"
+                    ],
+                    "example": "CASADO"
                 },
+                "monthly_income": {
+                    "type": "number",
+                    "minimum": 0,
+                    "example": 6000
+                },
+                "phone_number": {
+                    "type": "string",
+                    "example": "987654321"
+                }
+            }
+        },
+        "resources.UpdateUserResource": {
+            "type": "object",
+            "required": [
+                "password"
+            ],
+            "properties": {
                 "password": {
                     "type": "string",
                     "minLength": 6,
@@ -869,10 +1064,6 @@ const docTemplate = `{
                 "email": {
                     "type": "string",
                     "example": "user@example.com"
-                },
-                "full_name": {
-                    "type": "string",
-                    "example": "John Doe"
                 },
                 "id": {
                     "type": "string",
