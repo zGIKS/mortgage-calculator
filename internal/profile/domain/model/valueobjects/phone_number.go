@@ -22,6 +22,10 @@ func NewPhoneNumber(value string) (PhoneNumber, error) {
 	return PhoneNumber{value: value}, nil
 }
 
+func EmptyPhoneNumber() PhoneNumber {
+	return PhoneNumber{value: ""}
+}
+
 func (p PhoneNumber) Value() string {
 	return p.value
 }

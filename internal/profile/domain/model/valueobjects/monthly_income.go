@@ -27,6 +27,10 @@ func NewMonthlyIncome(amount float64, currency Currency) (MonthlyIncome, error) 
 	return MonthlyIncome{amount: amount, currency: currency}, nil
 }
 
+func EmptyMonthlyIncome() MonthlyIncome {
+	return MonthlyIncome{amount: 0, currency: CurrencyPEN}
+}
+
 func (m MonthlyIncome) Amount() float64 {
 	return m.amount
 }

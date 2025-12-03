@@ -21,6 +21,10 @@ func NewMaritalStatus(value string) (MaritalStatus, error) {
 	}
 }
 
+func EmptyMaritalStatus() MaritalStatus {
+	return ""
+}
+
 func (m MaritalStatus) String() string {
 	return string(m)
 }

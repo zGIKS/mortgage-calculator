@@ -31,8 +31,9 @@ func NewUserCommandService(
 }
 
 func (s *userCommandServiceImpl) HandleRegister(ctx context.Context, cmd commands.RegisterUserCommand) (*valueobjects.UserID, error) {
-	// Step 1: Validate DNI with RENIEC (must exist in RENIEC database)
-	if err := s.reniecService.ValidateDNI(ctx, cmd.DNI()); err != nil {
+	// Step 1: Validate DNI with RENIEC and get person data
+	personData, err := s.reniecService.GetPersonData(ctx, cmd.DNI())
+	if err != nil {
 		return nil, errors.New("DNI validation failed: " + err.Error())
 	}
 
@@ -76,7 +77,21 @@ func (s *userCommandServiceImpl) HandleRegister(ctx context.Context, cmd command
 		return nil, err
 	}
 
+	// Step 7: Create Profile automatically with RENIEC data
 	userID := user.ID()
+	if err := s.externalProfileService.CreateProfile(
+		ctx,
+		userID.String(),
+		cmd.DNI(),
+		personData.FirstName,
+		personData.FirstLastName,
+		personData.SecondLastName,
+	); err != nil {
+		// If profile creation fails, we should consider rolling back the user
+		// For now, we'll just return the error
+		return nil, errors.New("failed to create profile: " + err.Error())
+	}
+
 	return &userID, nil
 }
 

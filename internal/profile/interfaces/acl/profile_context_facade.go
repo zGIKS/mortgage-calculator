@@ -10,4 +10,7 @@ type ProfileContextFacade interface {
 
 	// FindUserIDByDNI obtiene el UserID asociado a un DNI
 	FindUserIDByDNI(ctx context.Context, dni string) (string, error)
+
+	// CreateProfile crea un perfil automáticamente con datos de RENIEC
+	CreateProfile(ctx context.Context, userID, dni, firstName, firstLastName, secondLastName string) error
 }
