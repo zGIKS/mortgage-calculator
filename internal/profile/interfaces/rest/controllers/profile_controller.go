@@ -8,7 +8,6 @@ import (
 	"finanzas-backend/internal/profile/domain/model/queries"
 	"finanzas-backend/internal/profile/domain/model/valueobjects"
 	"finanzas-backend/internal/profile/domain/services"
-	"finanzas-backend/internal/profile/infrastructure/external"
 	"finanzas-backend/internal/profile/interfaces/rest/resources"
 
 	"github.com/gin-gonic/gin"
@@ -17,129 +16,16 @@ import (
 type ProfileController struct {
 	commandService services.ProfileCommandService
 	queryService   services.ProfileQueryService
-	reniecService  *external.ReniecService
 }
 
 func NewProfileController(
 	commandService services.ProfileCommandService,
 	queryService services.ProfileQueryService,
-	reniecService *external.ReniecService,
 ) *ProfileController {
 	return &ProfileController{
 		commandService: commandService,
 		queryService:   queryService,
-		reniecService:  reniecService,
 	}
-}
-
-// GetReniecData godoc
-// @Summary Get person data from RENIEC by DNI
-// @Description Consult RENIEC API to get person information by DNI
-// @Tags Profile
-// @Accept json
-// @Produce json
-// @Param dni query string true "DNI number (8 digits)"
-// @Success 200 {object} resources.ReniecDataResource
-// @Failure 400 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Router /api/v1/profile/reniec [get]
-func (c *ProfileController) GetReniecData(ctx *gin.Context) {
-	dni := ctx.Query("dni")
-	if dni == "" {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "DNI is required"})
-		return
-	}
-
-	// Validate DNI format
-	if _, err := valueobjects.NewDNI(dni); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Get data from RENIEC
-	personData, err := c.reniecService.GetPersonDataByDNI(ctx.Request.Context(), dni)
-	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
-
-	response := resources.ReniecDataResource{
-		DNI:            personData.DocumentNumber,
-		FirstName:      personData.FirstName,
-		FirstLastName:  personData.FirstLastName,
-		SecondLastName: personData.SecondLastName,
-		FullName:       personData.FullName,
-	}
-
-	ctx.JSON(http.StatusOK, response)
-}
-
-// CreateProfile godoc
-// @Summary Create a new profile
-// @Description Create a new profile for authenticated user with DNI validation
-// @Tags Profile
-// @Accept json
-// @Produce json
-// @Param request body resources.CreateProfileResource true "Profile creation request"
-// @Success 201 {object} resources.ProfileResource
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 409 {object} map[string]string
-// @Security BearerAuth
-// @Router /api/v1/profile [post]
-func (c *ProfileController) CreateProfile(ctx *gin.Context) {
-	// Get user_id from context (set by JWT middleware)
-	userIDValue, exists := ctx.Get("user_id")
-	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
-		return
-	}
-
-	userID, err := valueobjects.NewUserIDFromString(userIDValue.(string))
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	var req resources.CreateProfileResource
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Create command
-	cmd, err := commands.NewCreateProfileCommand(
-		userID,
-		req.DNI,
-		req.PhoneNumber,
-		req.MonthlyIncome,
-		req.Currency,
-		req.MaritalStatus,
-		req.IsFirstHome,
-		req.HasOwnLand,
-	)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Execute command
-	profileID, err := c.commandService.HandleCreate(ctx.Request.Context(), cmd)
-	if err != nil {
-		ctx.JSON(http.StatusConflict, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Retrieve created profile
-	query, _ := queries.NewFindProfileByIDQuery(profileID.String())
-	profile, err := c.queryService.HandleFindByID(ctx.Request.Context(), query)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve created profile"})
-		return
-	}
-
-	response := c.transformProfileToResource(profile)
-	ctx.JSON(http.StatusCreated, response)
 }
 
 // GetProfile godoc

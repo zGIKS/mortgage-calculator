@@ -55,45 +55,6 @@ definitions:
     - tipo_gracia
     - tipo_tasa
     type: object
-  resources.CreateProfileResource:
-    properties:
-      currency:
-        enum:
-        - PEN
-        - USD
-        example: PEN
-        type: string
-      dni:
-        example: "46027897"
-        type: string
-      has_own_land:
-        example: false
-        type: boolean
-      is_first_home:
-        example: true
-        type: boolean
-      marital_status:
-        enum:
-        - SOLTERO
-        - CASADO
-        - DIVORCIADO
-        - VIUDO
-        example: SOLTERO
-        type: string
-      monthly_income:
-        example: 5000
-        minimum: 0
-        type: number
-      phone_number:
-        example: "987654321"
-        type: string
-    required:
-    - currency
-    - dni
-    - marital_status
-    - monthly_income
-    - phone_number
-    type: object
   resources.LoginResource:
     properties:
       email:
@@ -265,24 +226,6 @@ definitions:
     - dni
     - email
     - password
-    type: object
-  resources.ReniecDataResource:
-    properties:
-      dni:
-        example: "46027897"
-        type: string
-      first_last_name:
-        example: DELGADO
-        type: string
-      first_name:
-        example: ROXANA KARINA
-        type: string
-      full_name:
-        example: DELGADO CUELLAR ROXANA KARINA
-        type: string
-      second_last_name:
-        example: CUELLAR
-        type: string
     type: object
   resources.UpdateMortgageRequest:
     properties:
@@ -732,47 +675,6 @@ paths:
       summary: Get profile
       tags:
       - Profile
-    post:
-      consumes:
-      - application/json
-      description: Create a new profile for authenticated user with DNI validation
-      parameters:
-      - description: Profile creation request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/resources.CreateProfileResource'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/resources.ProfileResource'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "409":
-          description: Conflict
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Create a new profile
-      tags:
-      - Profile
     put:
       consumes:
       - application/json
@@ -812,39 +714,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Update profile
-      tags:
-      - Profile
-  /api/v1/profile/reniec:
-    get:
-      consumes:
-      - application/json
-      description: Consult RENIEC API to get person information by DNI
-      parameters:
-      - description: DNI number (8 digits)
-        in: query
-        name: dni
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/resources.ReniecDataResource'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Get person data from RENIEC by DNI
       tags:
       - Profile
 securityDefinitions:

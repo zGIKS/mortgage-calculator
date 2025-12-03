@@ -223,16 +223,12 @@ func setupProfileContext(router *gin.Engine, db *gorm.DB, cfg *config.Config) pr
 	profileQueryService := profileQueryServices.NewProfileQueryService(profileRepo)
 
 	// Controllers
-	profileController := profileControllers.NewProfileController(profileCommandService, profileQueryService, reniecService)
+	profileController := profileControllers.NewProfileController(profileCommandService, profileQueryService)
 
 	// Routes - Profile
 	profileGroup := router.Group("/api/v1/profile")
 	{
-		// Public route for RENIEC consultation
-		profileGroup.GET("/reniec", profileController.GetReniecData)
-
 		// Protected routes
-		profileGroup.POST("", authMiddleware, profileController.CreateProfile)
 		profileGroup.GET("", authMiddleware, profileController.GetProfile)
 		profileGroup.PUT("", authMiddleware, profileController.UpdateProfile)
 	}
