@@ -28,6 +28,17 @@ func NewUpdateProfileCommand(
 		return nil, errors.New("profile ID is required")
 	}
 
+	// Treat empty strings as nil
+	if phoneNumber != nil && *phoneNumber == "" {
+		phoneNumber = nil
+	}
+	if currency != nil && *currency == "" {
+		currency = nil
+	}
+	if maritalStatus != nil && *maritalStatus == "" {
+		maritalStatus = nil
+	}
+
 	// At least one field must be provided
 	if phoneNumber == nil && monthlyIncome == nil && currency == nil &&
 		maritalStatus == nil && isFirstHome == nil && hasOwnLand == nil {
