@@ -20,6 +20,7 @@ import (
 	iamACLImpl "finanzas-backend/internal/iam/application/acl"
 	iamCommandServices "finanzas-backend/internal/iam/application/commandservices"
 	iamQueryServices "finanzas-backend/internal/iam/application/queryservices"
+	iamExternal "finanzas-backend/internal/iam/infrastructure/external"
 	iamRepos "finanzas-backend/internal/iam/infrastructure/persistence/repositories"
 	iamSecurity "finanzas-backend/internal/iam/infrastructure/security"
 	iamACL "finanzas-backend/internal/iam/interfaces/acl"
@@ -34,11 +35,16 @@ import (
 	mortgageMiddleware "finanzas-backend/internal/mortgage/interfaces/rest/middleware"
 
 	// Profile
+	profileACLImpl "finanzas-backend/internal/profile/application/acl"
 	profileCommandServices "finanzas-backend/internal/profile/application/commandservices"
 	profileQueryServices "finanzas-backend/internal/profile/application/queryservices"
 	profileExternal "finanzas-backend/internal/profile/infrastructure/external"
 	profileRepos "finanzas-backend/internal/profile/infrastructure/persistence/repositories"
+	profileACL "finanzas-backend/internal/profile/interfaces/acl"
 	profileControllers "finanzas-backend/internal/profile/interfaces/rest/controllers"
+
+	// IAM Outbound Services
+	iamOutboundACL "finanzas-backend/internal/iam/application/outboundservices/acl"
 )
 
 // @title Finanzas API - MiVivienda Mortgage Calculator
@@ -68,10 +74,10 @@ func main() {
 	// Setup CORS
 	router.Use(corsMiddleware())
 
-	// Setup dependencies and routes
-	iamFacade := setupIAMContext(router, db, cfg)
+	// Setup dependencies and routes (Profile first, then IAM can use its ACL)
+	profileFacade := setupProfileContext(router, db, cfg)
+	iamFacade := setupIAMContext(router, db, cfg, profileFacade)
 	setupMortgageContext(router, db, iamFacade)
-	setupProfileContext(router, db, cfg)
 
 	// Swagger UI route con URL dinámica
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler,
@@ -116,7 +122,7 @@ func corsMiddleware() gin.HandlerFunc {
 	}
 }
 
-func setupIAMContext(router *gin.Engine, db *gorm.DB, cfg *config.Config) iamACL.IAMContextFacade {
+func setupIAMContext(router *gin.Engine, db *gorm.DB, cfg *config.Config, profileFacade profileACL.ProfileContextFacade) iamACL.IAMContextFacade {
 	// JWT Service
 	jwtService := iamSecurity.NewJWTService(
 		cfg.JWT.SecretKey,
@@ -124,11 +130,15 @@ func setupIAMContext(router *gin.Engine, db *gorm.DB, cfg *config.Config) iamACL
 		cfg.JWT.ExpirationHrs,
 	)
 
+	// External Services
+	reniecService := iamExternal.NewReniecService(cfg.Reniec.APIKey)
+	externalProfileService := iamOutboundACL.NewExternalProfileService(profileFacade)
+
 	// Repositories
 	userRepo := iamRepos.NewUserRepository(db)
 
 	// Services
-	userCommandService := iamCommandServices.NewUserCommandService(userRepo)
+	userCommandService := iamCommandServices.NewUserCommandService(userRepo, reniecService, externalProfileService)
 	userQueryService := iamQueryServices.NewUserQueryService(userRepo)
 	authService := iamCommandServices.NewAuthenticationService(userRepo, jwtService)
 
@@ -186,8 +196,16 @@ func setupMortgageContext(router *gin.Engine, db *gorm.DB, iamFacade iamACL.IAMC
 	}
 }
 
-func setupProfileContext(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
-	// External Services (ACL)
+func setupProfileContext(router *gin.Engine, db *gorm.DB, cfg *config.Config) profileACL.ProfileContextFacade {
+	// Repositories
+	profileRepo := profileRepos.NewProfileRepository(db)
+
+	// ACL Facade (expuesto a otros bounded contexts)
+	profileFacade := profileACLImpl.NewProfileContextFacade(profileRepo)
+
+	// External Services (ACL) - Necesitamos IAM facade temporalmente
+	// NOTA: Este es un acoplamiento temporal para el middleware
+	// En producción, el middleware debería estar en IAM o en un contexto compartido
 	iamFacade := iamACLImpl.NewIAMContextFacade(
 		iamSecurity.NewJWTService(cfg.JWT.SecretKey, cfg.JWT.Issuer, cfg.JWT.ExpirationHrs),
 		iamRepos.NewUserRepository(db),
@@ -199,9 +217,6 @@ func setupProfileContext(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 
 	// External Services
 	reniecService := profileExternal.NewReniecService(cfg.Reniec.APIKey)
-
-	// Repositories
-	profileRepo := profileRepos.NewProfileRepository(db)
 
 	// Services
 	profileCommandService := profileCommandServices.NewProfileCommandService(profileRepo, reniecService)
@@ -221,4 +236,6 @@ func setupProfileContext(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		profileGroup.GET("", authMiddleware, profileController.GetProfile)
 		profileGroup.PUT("", authMiddleware, profileController.UpdateProfile)
 	}
+
+	return profileFacade
 }

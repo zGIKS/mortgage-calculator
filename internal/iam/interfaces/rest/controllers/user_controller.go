@@ -33,7 +33,7 @@ func NewUserController(
 
 // Register godoc
 // @Summary Register a new user
-// @Description Register a new user with email and password
+// @Description Register a new user with DNI, email and password
 // @Tags IAM
 // @Accept json
 // @Produce json
@@ -49,7 +49,7 @@ func (c *UserController) Register(ctx *gin.Context) {
 		return
 	}
 
-	cmd, err := commands.NewRegisterUserCommand(req.Email, req.Password)
+	cmd, err := commands.NewRegisterUserCommand(req.DNI, req.Email, req.Password)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

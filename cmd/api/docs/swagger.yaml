@@ -251,6 +251,9 @@ definitions:
     type: object
   resources.RegisterUserResource:
     properties:
+      dni:
+        example: "12345678"
+        type: string
       email:
         example: user@example.com
         type: string
@@ -259,6 +262,7 @@ definitions:
         minLength: 6
         type: string
     required:
+    - dni
     - email
     - password
     type: object
@@ -455,7 +459,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Register a new user with email and password
+      description: Register a new user with DNI, email and password
       parameters:
       - description: User registration request
         in: body

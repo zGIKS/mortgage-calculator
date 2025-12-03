@@ -9,6 +9,7 @@ type UserResource struct {
 }
 
 type RegisterUserResource struct {
+	DNI      string `json:"dni" example:"12345678" validate:"required,len=8,numeric"`
 	Email    string `json:"email" example:"user@example.com" validate:"required,email"`
 	Password string `json:"password" example:"mypassword123" validate:"required,min=6"`
 }

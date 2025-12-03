@@ -3,25 +3,49 @@ package commandservices
 import (
 	"context"
 	"errors"
+	"finanzas-backend/internal/iam/application/outboundservices/acl"
 	"finanzas-backend/internal/iam/domain/model/commands"
 	"finanzas-backend/internal/iam/domain/model/entities"
 	"finanzas-backend/internal/iam/domain/model/valueobjects"
 	"finanzas-backend/internal/iam/domain/repositories"
 	"finanzas-backend/internal/iam/domain/services"
+	"finanzas-backend/internal/iam/infrastructure/external"
 )
 
 type userCommandServiceImpl struct {
-	userRepo repositories.UserRepository
+	userRepo              repositories.UserRepository
+	reniecService         *external.ReniecService
+	externalProfileService *acl.ExternalProfileService
 }
 
-func NewUserCommandService(userRepo repositories.UserRepository) services.UserCommandService {
+func NewUserCommandService(
+	userRepo repositories.UserRepository,
+	reniecService *external.ReniecService,
+	externalProfileService *acl.ExternalProfileService,
+) services.UserCommandService {
 	return &userCommandServiceImpl{
-		userRepo: userRepo,
+		userRepo:              userRepo,
+		reniecService:         reniecService,
+		externalProfileService: externalProfileService,
 	}
 }
 
 func (s *userCommandServiceImpl) HandleRegister(ctx context.Context, cmd commands.RegisterUserCommand) (*valueobjects.UserID, error) {
-	// Check if user already exists
+	// Step 1: Validate DNI with RENIEC (must exist in RENIEC database)
+	if err := s.reniecService.ValidateDNI(ctx, cmd.DNI()); err != nil {
+		return nil, errors.New("DNI validation failed: " + err.Error())
+	}
+
+	// Step 2: Check if DNI is already registered in Profile context
+	existsByDNI, err := s.externalProfileService.DNIExists(ctx, cmd.DNI())
+	if err != nil {
+		return nil, err
+	}
+	if existsByDNI {
+		return nil, errors.New("user with this DNI already exists")
+	}
+
+	// Step 3: Check if email is already registered
 	exists, err := s.userRepo.ExistsByEmail(ctx, cmd.Email())
 	if err != nil {
 		return nil, err
@@ -30,7 +54,7 @@ func (s *userCommandServiceImpl) HandleRegister(ctx context.Context, cmd command
 		return nil, errors.New("user with this email already exists")
 	}
 
-	// Create value objects
+	// Step 4: Create value objects (email and password only, NO DNI)
 	email, err := valueobjects.NewEmail(cmd.Email())
 	if err != nil {
 		return nil, err
@@ -41,13 +65,13 @@ func (s *userCommandServiceImpl) HandleRegister(ctx context.Context, cmd command
 		return nil, err
 	}
 
-	// Create entity
+	// Step 5: Create entity (without DNI)
 	user, err := entities.NewUser(email, password)
 	if err != nil {
 		return nil, err
 	}
 
-	// Persist
+	// Step 6: Persist (only email and password)
 	if err := s.userRepo.Save(ctx, user); err != nil {
 		return nil, err
 	}

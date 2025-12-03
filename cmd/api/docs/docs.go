@@ -126,7 +126,7 @@ const docTemplate = `{
         },
         "/api/v1/iam/register": {
             "post": {
-                "description": "Register a new user with email and password",
+                "description": "Register a new user with DNI, email and password",
                 "consumes": [
                     "application/json"
                 ],
@@ -1084,10 +1084,15 @@ const docTemplate = `{
         "resources.RegisterUserResource": {
             "type": "object",
             "required": [
+                "dni",
                 "email",
                 "password"
             ],
             "properties": {
+                "dni": {
+                    "type": "string",
+                    "example": "12345678"
+                },
                 "email": {
                     "type": "string",
                     "example": "user@example.com"
