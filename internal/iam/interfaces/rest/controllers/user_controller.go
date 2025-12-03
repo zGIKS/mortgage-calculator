@@ -118,19 +118,19 @@ func (c *UserController) Login(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, response)
 }
 
-// UpdateProfile godoc
-// @Summary Update user profile
+// UpdatePassword godoc
+// @Summary Update user password
 // @Description Update authenticated user's password
 // @Tags IAM
 // @Accept json
 // @Produce json
-// @Param request body resources.UpdateUserResource true "Update user request"
+// @Param request body resources.UpdateUserResource true "Update password request"
 // @Success 200 {object} resources.UserResource
 // @Failure 400 {object} map[string]string
 // @Failure 401 {object} map[string]string
 // @Security BearerAuth
-// @Router /api/v1/iam/profile [put]
-func (c *UserController) UpdateProfile(ctx *gin.Context) {
+// @Router /api/v1/iam/password [put]
+func (c *UserController) UpdatePassword(ctx *gin.Context) {
 	// Get user_id from context (set by JWT middleware)
 	userIDValue, exists := ctx.Get("user_id")
 	if !exists {

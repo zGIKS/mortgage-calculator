@@ -203,7 +203,7 @@ principalFinanced := mortgage.LoanAmount() - mortgage.BonoTechoPropio()
 **Recomendación:** Agregar endpoints:
 - `PUT /api/v1/mortgage/:id` - Actualizar hipoteca
 - `DELETE /api/v1/mortgage/:id` - Eliminar hipoteca
-- `PUT /api/v1/iam/profile` - Actualizar perfil de usuario
+- `PUT /api/v1/iam/password` - Actualizar contraseña de usuario
 
 ---
 
@@ -428,7 +428,7 @@ Cada caso incluye:
 1. **Endpoints de Edición**
    - `PUT /api/v1/mortgage/:id` - Actualizar hipoteca
    - `DELETE /api/v1/mortgage/:id` - Eliminar hipoteca
-   - `PUT /api/v1/iam/profile` - Actualizar perfil
+   - `PUT /api/v1/iam/password` - Actualizar contraseña
 
 2. **Diagrama ER de Base de Datos**
    - Crear diagrama entidad-relación
