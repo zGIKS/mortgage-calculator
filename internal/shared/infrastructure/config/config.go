@@ -8,11 +8,12 @@ import (
 )
 
 type Config struct {
-	Database DatabaseConfig
-	Server   ServerConfig
-	App      AppConfig
-	JWT      JWTConfig
-	Reniec   ReniecConfig
+	Database   DatabaseConfig
+	Server     ServerConfig
+	App        AppConfig
+	JWT        JWTConfig
+	Reniec     ReniecConfig
+	Encryption EncryptionConfig
 }
 
 type DatabaseConfig struct {
@@ -41,6 +42,10 @@ type JWTConfig struct {
 
 type ReniecConfig struct {
 	APIKey string
+}
+
+type EncryptionConfig struct {
+	Key string
 }
 
 func LoadConfig() (*Config, error) {
@@ -72,6 +77,9 @@ func LoadConfig() (*Config, error) {
 		},
 		Reniec: ReniecConfig{
 			APIKey: getEnv("RENIEC_API_KEY", ""),
+		},
+		Encryption: EncryptionConfig{
+			Key: getEnv("ENCRYPTION_KEY", "12345678901234567890123456789012"), // 32 bytes default for dev
 		},
 	}
 

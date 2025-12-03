@@ -11,7 +11,7 @@ import (
 type ProfileModel struct {
 	ID             uuid.UUID `gorm:"type:uuid;primaryKey;column:id"`
 	UserID         uuid.UUID `gorm:"type:uuid;not null;uniqueIndex;column:user_id"`
-	DNI            string    `gorm:"type:varchar(8);not null;uniqueIndex;column:dni"`
+	DNIEncrypted   string    `gorm:"type:varchar(255);not null;uniqueIndex;column:dni_encrypted"`
 	FirstName      string    `gorm:"type:varchar(100);not null;column:first_name"`
 	FirstLastName  string    `gorm:"type:varchar(100);not null;column:first_last_name"`
 	SecondLastName string    `gorm:"type:varchar(100);not null;column:second_last_name"`
@@ -40,24 +40,40 @@ func (m *ProfileModel) ToEntity() (*entities.Profile, error) {
 		return nil, err
 	}
 
-	dni, err := valueobjects.NewDNI(m.DNI)
-	if err != nil {
-		return nil, err
+	// Create DNI from encrypted value (will be decrypted by repository)
+	dni := valueobjects.NewDNIFromEncrypted(m.DNIEncrypted)
+
+	// Handle optional phone number
+	var phoneNumber valueobjects.PhoneNumber
+	if m.PhoneNumber == "" {
+		phoneNumber = valueobjects.EmptyPhoneNumber()
+	} else {
+		phoneNumber, err = valueobjects.NewPhoneNumber(m.PhoneNumber)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	phoneNumber, err := valueobjects.NewPhoneNumber(m.PhoneNumber)
-	if err != nil {
-		return nil, err
+	// Handle optional monthly income
+	var monthlyIncome valueobjects.MonthlyIncome
+	if m.MonthlyIncome == 0 {
+		monthlyIncome = valueobjects.EmptyMonthlyIncome()
+	} else {
+		monthlyIncome, err = valueobjects.NewMonthlyIncome(m.MonthlyIncome, valueobjects.Currency(m.Currency))
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	monthlyIncome, err := valueobjects.NewMonthlyIncome(m.MonthlyIncome, valueobjects.Currency(m.Currency))
-	if err != nil {
-		return nil, err
-	}
-
-	maritalStatus, err := valueobjects.NewMaritalStatus(m.MaritalStatus)
-	if err != nil {
-		return nil, err
+	// Handle optional marital status
+	var maritalStatus valueobjects.MaritalStatus
+	if m.MaritalStatus == "" {
+		maritalStatus = valueobjects.EmptyMaritalStatus()
+	} else {
+		maritalStatus, err = valueobjects.NewMaritalStatus(m.MaritalStatus)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return entities.ReconstructProfile(
@@ -81,7 +97,7 @@ func FromEntity(profile *entities.Profile) *ProfileModel {
 	return &ProfileModel{
 		ID:             profile.ID().Value(),
 		UserID:         profile.UserID().Value(),
-		DNI:            profile.DNI().Value(),
+		DNIEncrypted:   profile.DNI().EncryptedValue(),
 		FirstName:      profile.FirstName(),
 		FirstLastName:  profile.FirstLastName(),
 		SecondLastName: profile.SecondLastName(),

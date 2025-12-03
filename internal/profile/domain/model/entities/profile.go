@@ -81,19 +81,19 @@ func ReconstructProfile(
 }
 
 // Getters
-func (p *Profile) ID() valueobjects.ProfileID           { return p.id }
-func (p *Profile) UserID() valueobjects.UserID          { return p.userID }
-func (p *Profile) DNI() valueobjects.DNI                { return p.dni }
-func (p *Profile) FirstName() string                    { return p.firstName }
-func (p *Profile) FirstLastName() string                { return p.firstLastName }
-func (p *Profile) SecondLastName() string               { return p.secondLastName }
-func (p *Profile) PhoneNumber() valueobjects.PhoneNumber { return p.phoneNumber }
+func (p *Profile) ID() valueobjects.ProfileID                { return p.id }
+func (p *Profile) UserID() valueobjects.UserID               { return p.userID }
+func (p *Profile) DNI() valueobjects.DNI                     { return p.dni }
+func (p *Profile) FirstName() string                         { return p.firstName }
+func (p *Profile) FirstLastName() string                     { return p.firstLastName }
+func (p *Profile) SecondLastName() string                    { return p.secondLastName }
+func (p *Profile) PhoneNumber() valueobjects.PhoneNumber     { return p.phoneNumber }
 func (p *Profile) MonthlyIncome() valueobjects.MonthlyIncome { return p.monthlyIncome }
 func (p *Profile) MaritalStatus() valueobjects.MaritalStatus { return p.maritalStatus }
-func (p *Profile) IsFirstHome() bool                    { return p.isFirstHome }
-func (p *Profile) HasOwnLand() bool                     { return p.hasOwnLand }
-func (p *Profile) CreatedAt() time.Time                 { return p.createdAt }
-func (p *Profile) UpdatedAt() time.Time                 { return p.updatedAt }
+func (p *Profile) IsFirstHome() bool                         { return p.isFirstHome }
+func (p *Profile) HasOwnLand() bool                          { return p.hasOwnLand }
+func (p *Profile) CreatedAt() time.Time                      { return p.createdAt }
+func (p *Profile) UpdatedAt() time.Time                      { return p.updatedAt }
 
 func (p *Profile) FullName() string {
 	return p.firstLastName + " " + p.secondLastName + " " + p.firstName
@@ -101,6 +101,10 @@ func (p *Profile) FullName() string {
 
 func (p *Profile) SetID(id valueobjects.ProfileID) {
 	p.id = id
+}
+
+func (p *Profile) SetDNI(dni valueobjects.DNI) {
+	p.dni = dni
 }
 
 func (p *Profile) UpdatePhoneNumber(phoneNumber valueobjects.PhoneNumber) {

@@ -15,6 +15,7 @@ import (
 	// Shared
 	"finanzas-backend/internal/shared/infrastructure/config"
 	"finanzas-backend/internal/shared/infrastructure/persistence"
+	"finanzas-backend/internal/shared/infrastructure/security"
 
 	// IAM
 	iamACLImpl "finanzas-backend/internal/iam/application/acl"
@@ -197,8 +198,14 @@ func setupMortgageContext(router *gin.Engine, db *gorm.DB, iamFacade iamACL.IAMC
 }
 
 func setupProfileContext(router *gin.Engine, db *gorm.DB, cfg *config.Config) profileACL.ProfileContextFacade {
+	// Initialize encryption service
+	encryptionService, err := security.NewEncryptionService(cfg.Encryption.Key)
+	if err != nil {
+		log.Fatalf("Failed to initialize encryption service: %v", err)
+	}
+
 	// Repositories
-	profileRepo := profileRepos.NewProfileRepository(db)
+	profileRepo := profileRepos.NewProfileRepository(db, encryptionService)
 
 	// ACL Facade (expuesto a otros bounded contexts)
 	profileFacade := profileACLImpl.NewProfileContextFacade(profileRepo)
