@@ -619,12 +619,9 @@ const docTemplate = `{
         "resources.CalculateMortgageRequest": {
             "type": "object",
             "required": [
-                "cuota_inicial",
                 "dias_anio",
-                "frecuencia_pago",
                 "moneda",
                 "monto_prestamo",
-                "plazo_meses",
                 "precio_venta",
                 "tasa_anual",
                 "tipo_gracia",
@@ -635,6 +632,22 @@ const docTemplate = `{
                     "type": "number",
                     "minimum": 0
                 },
+                "cok": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "comision_desembolso": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "comision_evaluacion": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "costos_mensuales_adicionales": {
+                    "type": "number",
+                    "minimum": 0
+                },
                 "cuota_inicial": {
                     "type": "number",
                     "minimum": 0
@@ -642,8 +655,20 @@ const docTemplate = `{
                 "dias_anio": {
                     "type": "integer"
                 },
+                "frecuencia": {
+                    "type": "string",
+                    "enum": [
+                        "MENSUAL",
+                        "BIMESTRAL",
+                        "TRIMESTRAL"
+                    ]
+                },
                 "frecuencia_pago": {
                     "type": "integer"
+                },
+                "gastos_administrativos": {
+                    "type": "number",
+                    "minimum": 0
                 },
                 "meses_gracia": {
                     "type": "integer",
@@ -659,11 +684,27 @@ const docTemplate = `{
                 "monto_prestamo": {
                     "type": "number"
                 },
+                "numero_anios": {
+                    "type": "integer",
+                    "minimum": 0
+                },
                 "plazo_meses": {
                     "type": "integer"
                 },
+                "portes": {
+                    "type": "number",
+                    "minimum": 0
+                },
                 "precio_venta": {
                     "type": "number"
+                },
+                "seguro_desgravamen": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "seguro_inmueble_anual": {
+                    "type": "number",
+                    "minimum": 0
                 },
                 "tasa_anual": {
                     "type": "number",
@@ -725,6 +766,15 @@ const docTemplate = `{
                 "bono_techo_propio": {
                     "type": "number"
                 },
+                "comision_desembolso": {
+                    "type": "number"
+                },
+                "comision_evaluacion": {
+                    "type": "number"
+                },
+                "costos_mensuales_adicionales": {
+                    "type": "number"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -740,11 +790,20 @@ const docTemplate = `{
                 "cuota_inicial": {
                     "type": "number"
                 },
+                "cuota_total": {
+                    "type": "number"
+                },
+                "cuotas_por_anio": {
+                    "type": "integer"
+                },
                 "dias_anio": {
                     "type": "integer"
                 },
                 "frecuencia_pago": {
                     "type": "integer"
+                },
+                "gastos_administrativos": {
+                    "type": "number"
                 },
                 "id": {
                     "type": "integer"
@@ -758,14 +817,29 @@ const docTemplate = `{
                 "monto_prestamo": {
                     "type": "number"
                 },
+                "numero_anios": {
+                    "type": "integer"
+                },
+                "numero_cuotas": {
+                    "type": "integer"
+                },
                 "plazo_meses": {
                     "type": "integer"
+                },
+                "portes": {
+                    "type": "number"
                 },
                 "precio_venta": {
                     "type": "number"
                 },
                 "saldo_financiar": {
                     "description": "Resultados calculados",
+                    "type": "number"
+                },
+                "seguro_desgravamen": {
+                    "type": "number"
+                },
+                "seguro_inmueble_anual": {
                     "type": "number"
                 },
                 "tasa_anual": {
@@ -777,6 +851,9 @@ const docTemplate = `{
                 "tcea": {
                     "type": "number"
                 },
+                "tea": {
+                    "type": "number"
+                },
                 "tipo_gracia": {
                     "type": "string"
                 },
@@ -786,10 +863,25 @@ const docTemplate = `{
                 "tir": {
                     "type": "number"
                 },
+                "tir_flujo": {
+                    "type": "number"
+                },
+                "total_cargos": {
+                    "type": "number"
+                },
+                "total_gastos": {
+                    "type": "number"
+                },
                 "total_intereses": {
                     "type": "number"
                 },
                 "total_pagado": {
+                    "type": "number"
+                },
+                "total_pagado_con_cargos": {
+                    "type": "number"
+                },
+                "total_seguros": {
                     "type": "number"
                 },
                 "user_id": {
@@ -838,20 +930,47 @@ const docTemplate = `{
                 "amortizacion": {
                     "type": "number"
                 },
+                "costos_adicionales": {
+                    "type": "number"
+                },
                 "cuota": {
+                    "type": "number"
+                },
+                "cuota_total": {
                     "type": "number"
                 },
                 "es_periodo_gracia": {
                     "type": "boolean"
                 },
+                "gastos_administrativos": {
+                    "type": "number"
+                },
                 "interes": {
                     "type": "number"
+                },
+                "numero_anio": {
+                    "type": "integer"
                 },
                 "periodo": {
                     "type": "integer"
                 },
+                "portes": {
+                    "type": "number"
+                },
                 "saldo_final": {
                     "type": "number"
+                },
+                "seguro_desgravamen": {
+                    "type": "number"
+                },
+                "seguro_inmueble": {
+                    "type": "number"
+                },
+                "tasa_periodo": {
+                    "type": "number"
+                },
+                "tipo_gracia": {
+                    "type": "string"
                 }
             }
         },
@@ -946,6 +1065,22 @@ const docTemplate = `{
                     "type": "number",
                     "minimum": 0
                 },
+                "cok": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "comision_desembolso": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "comision_evaluacion": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "costos_mensuales_adicionales": {
+                    "type": "number",
+                    "minimum": 0
+                },
                 "cuota_inicial": {
                     "type": "number",
                     "minimum": 0
@@ -953,8 +1088,20 @@ const docTemplate = `{
                 "dias_anio": {
                     "type": "integer"
                 },
+                "frecuencia": {
+                    "type": "string",
+                    "enum": [
+                        "MENSUAL",
+                        "BIMESTRAL",
+                        "TRIMESTRAL"
+                    ]
+                },
                 "frecuencia_pago": {
                     "type": "integer"
+                },
+                "gastos_administrativos": {
+                    "type": "number",
+                    "minimum": 0
                 },
                 "meses_gracia": {
                     "type": "integer",
@@ -970,11 +1117,27 @@ const docTemplate = `{
                 "monto_prestamo": {
                     "type": "number"
                 },
+                "numero_anios": {
+                    "type": "integer",
+                    "minimum": 0
+                },
                 "plazo_meses": {
                     "type": "integer"
                 },
+                "portes": {
+                    "type": "number",
+                    "minimum": 0
+                },
                 "precio_venta": {
                     "type": "number"
+                },
+                "seguro_desgravamen": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "seguro_inmueble_anual": {
+                    "type": "number",
+                    "minimum": 0
                 },
                 "tasa_anual": {
                     "type": "number",
