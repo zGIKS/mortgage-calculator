@@ -9,27 +9,24 @@ type User struct {
 	id        valueobjects.UserID
 	email     valueobjects.Email
 	password  valueobjects.Password
-	fullName  string
 	createdAt time.Time
 	updatedAt time.Time
 }
 
-func NewUser(email valueobjects.Email, password valueobjects.Password, fullName string) (*User, error) {
+func NewUser(email valueobjects.Email, password valueobjects.Password) (*User, error) {
 	return &User{
 		email:     email,
 		password:  password,
-		fullName:  fullName,
 		createdAt: time.Now(),
 		updatedAt: time.Now(),
 	}, nil
 }
 
-func ReconstructUser(id valueobjects.UserID, email valueobjects.Email, password valueobjects.Password, fullName string, createdAt, updatedAt time.Time) *User {
+func ReconstructUser(id valueobjects.UserID, email valueobjects.Email, password valueobjects.Password, createdAt, updatedAt time.Time) *User {
 	return &User{
 		id:        id,
 		email:     email,
 		password:  password,
-		fullName:  fullName,
 		createdAt: createdAt,
 		updatedAt: updatedAt,
 	}
@@ -38,7 +35,6 @@ func ReconstructUser(id valueobjects.UserID, email valueobjects.Email, password 
 func (u *User) ID() valueobjects.UserID         { return u.id }
 func (u *User) Email() valueobjects.Email       { return u.email }
 func (u *User) Password() valueobjects.Password { return u.password }
-func (u *User) FullName() string                { return u.fullName }
 func (u *User) CreatedAt() time.Time            { return u.createdAt }
 func (u *User) UpdatedAt() time.Time            { return u.updatedAt }
 
@@ -57,10 +53,5 @@ func (u *User) UpdateEmail(email valueobjects.Email) {
 
 func (u *User) UpdatePassword(password valueobjects.Password) {
 	u.password = password
-	u.updatedAt = time.Now()
-}
-
-func (u *User) UpdateFullName(fullName string) {
-	u.fullName = fullName
 	u.updatedAt = time.Now()
 }

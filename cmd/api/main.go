@@ -32,6 +32,13 @@ import (
 	mortgageRepos "finanzas-backend/internal/mortgage/infrastructure/persistence/repositories"
 	mortgageControllers "finanzas-backend/internal/mortgage/interfaces/rest/controllers"
 	mortgageMiddleware "finanzas-backend/internal/mortgage/interfaces/rest/middleware"
+
+	// Profile
+	profileCommandServices "finanzas-backend/internal/profile/application/commandservices"
+	profileQueryServices "finanzas-backend/internal/profile/application/queryservices"
+	profileExternal "finanzas-backend/internal/profile/infrastructure/external"
+	profileRepos "finanzas-backend/internal/profile/infrastructure/persistence/repositories"
+	profileControllers "finanzas-backend/internal/profile/interfaces/rest/controllers"
 )
 
 // @title Finanzas API - MiVivienda Mortgage Calculator
@@ -64,6 +71,7 @@ func main() {
 	// Setup dependencies and routes
 	iamFacade := setupIAMContext(router, db, cfg)
 	setupMortgageContext(router, db, iamFacade)
+	setupProfileContext(router, db, cfg)
 
 	// Swagger UI route con URL dinámica
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler,
@@ -175,5 +183,42 @@ func setupMortgageContext(router *gin.Engine, db *gorm.DB, iamFacade iamACL.IAMC
 		mortgageGroup.PUT("/:id", mortgageController.UpdateMortgage)
 		mortgageGroup.DELETE("/:id", mortgageController.DeleteMortgage)
 		mortgageGroup.GET("/history", mortgageController.GetMortgageHistory)
+	}
+}
+
+func setupProfileContext(router *gin.Engine, db *gorm.DB, cfg *config.Config) {
+	// External Services (ACL)
+	iamFacade := iamACLImpl.NewIAMContextFacade(
+		iamSecurity.NewJWTService(cfg.JWT.SecretKey, cfg.JWT.Issuer, cfg.JWT.ExpirationHrs),
+		iamRepos.NewUserRepository(db),
+	)
+	externalAuthService := mortgageACL.NewExternalAuthenticationService(iamFacade)
+
+	// Middleware
+	authMiddleware := mortgageMiddleware.JWTAuthMiddleware(externalAuthService)
+
+	// External Services
+	reniecService := profileExternal.NewReniecService(cfg.Reniec.APIKey)
+
+	// Repositories
+	profileRepo := profileRepos.NewProfileRepository(db)
+
+	// Services
+	profileCommandService := profileCommandServices.NewProfileCommandService(profileRepo, reniecService)
+	profileQueryService := profileQueryServices.NewProfileQueryService(profileRepo)
+
+	// Controllers
+	profileController := profileControllers.NewProfileController(profileCommandService, profileQueryService, reniecService)
+
+	// Routes - Profile
+	profileGroup := router.Group("/api/v1/profile")
+	{
+		// Public route for RENIEC consultation
+		profileGroup.GET("/reniec", profileController.GetReniecData)
+
+		// Protected routes
+		profileGroup.POST("", authMiddleware, profileController.CreateProfile)
+		profileGroup.GET("", authMiddleware, profileController.GetProfile)
+		profileGroup.PUT("", authMiddleware, profileController.UpdateProfile)
 	}
 }

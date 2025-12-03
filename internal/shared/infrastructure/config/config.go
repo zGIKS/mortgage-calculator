@@ -12,6 +12,7 @@ type Config struct {
 	Server   ServerConfig
 	App      AppConfig
 	JWT      JWTConfig
+	Reniec   ReniecConfig
 }
 
 type DatabaseConfig struct {
@@ -36,6 +37,10 @@ type JWTConfig struct {
 	SecretKey     string
 	Issuer        string
 	ExpirationHrs int
+}
+
+type ReniecConfig struct {
+	APIKey string
 }
 
 func LoadConfig() (*Config, error) {
@@ -64,6 +69,9 @@ func LoadConfig() (*Config, error) {
 			SecretKey:     getEnv("JWT_SECRET_KEY", "your-super-secret-key-change-in-production"),
 			Issuer:        getEnv("JWT_ISSUER", "finanzas-backend"),
 			ExpirationHrs: getEnvAsInt("JWT_EXPIRATION_HRS", 24),
+		},
+		Reniec: ReniecConfig{
+			APIKey: getEnv("RENIEC_API_KEY", ""),
 		},
 	}
 

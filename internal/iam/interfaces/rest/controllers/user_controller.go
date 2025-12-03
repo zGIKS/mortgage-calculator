@@ -33,7 +33,7 @@ func NewUserController(
 
 // Register godoc
 // @Summary Register a new user
-// @Description Register a new user with email, password, and full name
+// @Description Register a new user with email and password
 // @Tags IAM
 // @Accept json
 // @Produce json
@@ -49,7 +49,7 @@ func (c *UserController) Register(ctx *gin.Context) {
 		return
 	}
 
-	cmd, err := commands.NewRegisterUserCommand(req.Email, req.Password, req.FullName)
+	cmd, err := commands.NewRegisterUserCommand(req.Email, req.Password)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -120,7 +120,7 @@ func (c *UserController) Login(ctx *gin.Context) {
 
 // UpdateProfile godoc
 // @Summary Update user profile
-// @Description Update authenticated user's email, password, and/or full name
+// @Description Update authenticated user's password
 // @Tags IAM
 // @Accept json
 // @Produce json
@@ -128,7 +128,6 @@ func (c *UserController) Login(ctx *gin.Context) {
 // @Success 200 {object} resources.UserResource
 // @Failure 400 {object} map[string]string
 // @Failure 401 {object} map[string]string
-// @Failure 409 {object} map[string]string
 // @Security BearerAuth
 // @Router /api/v1/iam/profile [put]
 func (c *UserController) UpdateProfile(ctx *gin.Context) {
@@ -151,17 +150,13 @@ func (c *UserController) UpdateProfile(ctx *gin.Context) {
 		return
 	}
 
-	cmd, err := commands.NewUpdateUserCommand(userID, req.Email, req.Password, req.FullName)
+	cmd, err := commands.NewUpdateUserCommand(userID, req.Password)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	if err := c.userCommandService.HandleUpdate(ctx.Request.Context(), cmd); err != nil {
-		if err.Error() == "email already in use by another user" {
-			ctx.JSON(http.StatusConflict, gin.H{"error": err.Error()})
-			return
-		}
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -182,7 +177,6 @@ func (c *UserController) transformUserToResource(user *entities.User) resources.
 	return resources.UserResource{
 		ID:        user.ID().String(),
 		Email:     user.Email().Value(),
-		FullName:  user.FullName(),
 		CreatedAt: user.CreatedAt(),
 	}
 }

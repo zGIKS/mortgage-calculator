@@ -13,6 +13,7 @@ import (
 	// Import models for auto-migration
 	iamModels "finanzas-backend/internal/iam/infrastructure/persistence/models"
 	mortgageModels "finanzas-backend/internal/mortgage/infrastructure/persistence/models"
+	profileModels "finanzas-backend/internal/profile/infrastructure/persistence/models"
 )
 
 func NewDatabase(cfg *config.Config) (*gorm.DB, error) {
@@ -47,5 +48,6 @@ func autoMigrate(db *gorm.DB) error {
 		&iamModels.UserModel{},
 		&mortgageModels.MortgageModel{},
 		&mortgageModels.PaymentScheduleItemModel{},
+		&profileModels.ProfileModel{},
 	)
 }

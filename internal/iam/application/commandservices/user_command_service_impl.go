@@ -42,7 +42,7 @@ func (s *userCommandServiceImpl) HandleRegister(ctx context.Context, cmd command
 	}
 
 	// Create entity
-	user, err := entities.NewUser(email, password, cmd.FullName())
+	user, err := entities.NewUser(email, password)
 	if err != nil {
 		return nil, err
 	}
@@ -66,37 +66,12 @@ func (s *userCommandServiceImpl) HandleUpdate(ctx context.Context, cmd *commands
 		return errors.New("user not found")
 	}
 
-	// Update email if provided
-	if cmd.Email() != nil {
-		// Check if new email is already in use by another user
-		existingUser, err := s.userRepo.FindByEmail(ctx, *cmd.Email())
-		if err != nil {
-			return err
-		}
-		if existingUser != nil && existingUser.ID().Value() != user.ID().Value() {
-			return errors.New("email already in use by another user")
-		}
-
-		email, err := valueobjects.NewEmail(*cmd.Email())
-		if err != nil {
-			return err
-		}
-		user.UpdateEmail(email)
+	// Update password
+	password, err := valueobjects.NewPassword(*cmd.Password())
+	if err != nil {
+		return err
 	}
-
-	// Update password if provided
-	if cmd.Password() != nil {
-		password, err := valueobjects.NewPassword(*cmd.Password())
-		if err != nil {
-			return err
-		}
-		user.UpdatePassword(password)
-	}
-
-	// Update full name if provided
-	if cmd.FullName() != nil {
-		user.UpdateFullName(*cmd.FullName())
-	}
+	user.UpdatePassword(password)
 
 	// Update in repository
 	return s.userRepo.Update(ctx, user)

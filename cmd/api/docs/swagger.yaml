@@ -55,6 +55,45 @@ definitions:
     - tipo_gracia
     - tipo_tasa
     type: object
+  resources.CreateProfileResource:
+    properties:
+      currency:
+        enum:
+        - PEN
+        - USD
+        example: PEN
+        type: string
+      dni:
+        example: "46027897"
+        type: string
+      has_own_land:
+        example: false
+        type: boolean
+      is_first_home:
+        example: true
+        type: boolean
+      marital_status:
+        enum:
+        - SOLTERO
+        - CASADO
+        - DIVORCIADO
+        - VIUDO
+        example: SOLTERO
+        type: string
+      monthly_income:
+        example: 5000
+        minimum: 0
+        type: number
+      phone_number:
+        example: "987654321"
+        type: string
+    required:
+    - currency
+    - dni
+    - marital_status
+    - monthly_income
+    - phone_number
+    type: object
   resources.LoginResource:
     properties:
       email:
@@ -165,14 +204,55 @@ definitions:
       saldo_final:
         type: number
     type: object
+  resources.ProfileResource:
+    properties:
+      created_at:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      currency:
+        example: PEN
+        type: string
+      dni:
+        example: "46027897"
+        type: string
+      first_last_name:
+        example: DELGADO
+        type: string
+      first_name:
+        example: ROXANA KARINA
+        type: string
+      full_name:
+        example: DELGADO CUELLAR ROXANA KARINA
+        type: string
+      has_own_land:
+        example: false
+        type: boolean
+      id:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      is_first_home:
+        example: true
+        type: boolean
+      marital_status:
+        example: SOLTERO
+        type: string
+      monthly_income:
+        example: 5000
+        type: number
+      phone_number:
+        example: "987654321"
+        type: string
+      second_last_name:
+        example: CUELLAR
+        type: string
+      user_id:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+    type: object
   resources.RegisterUserResource:
     properties:
       email:
         example: user@example.com
-        type: string
-      full_name:
-        example: John Doe
-        minLength: 2
         type: string
       password:
         example: mypassword123
@@ -180,8 +260,25 @@ definitions:
         type: string
     required:
     - email
-    - full_name
     - password
+    type: object
+  resources.ReniecDataResource:
+    properties:
+      dni:
+        example: "46027897"
+        type: string
+      first_last_name:
+        example: DELGADO
+        type: string
+      first_name:
+        example: ROXANA KARINA
+        type: string
+      full_name:
+        example: DELGADO CUELLAR ROXANA KARINA
+        type: string
+      second_last_name:
+        example: CUELLAR
+        type: string
     type: object
   resources.UpdateMortgageRequest:
     properties:
@@ -227,19 +324,44 @@ definitions:
         - EFFECTIVE
         type: string
     type: object
+  resources.UpdateProfileResource:
+    properties:
+      currency:
+        enum:
+        - PEN
+        - USD
+        example: USD
+        type: string
+      has_own_land:
+        example: true
+        type: boolean
+      is_first_home:
+        example: false
+        type: boolean
+      marital_status:
+        enum:
+        - SOLTERO
+        - CASADO
+        - DIVORCIADO
+        - VIUDO
+        example: CASADO
+        type: string
+      monthly_income:
+        example: 6000
+        minimum: 0
+        type: number
+      phone_number:
+        example: "987654321"
+        type: string
+    type: object
   resources.UpdateUserResource:
     properties:
-      email:
-        example: newemail@example.com
-        type: string
-      full_name:
-        example: Jane Doe
-        minLength: 2
-        type: string
       password:
         example: newpassword123
         minLength: 6
         type: string
+    required:
+    - password
     type: object
   resources.UserResource:
     properties:
@@ -248,9 +370,6 @@ definitions:
         type: string
       email:
         example: user@example.com
-        type: string
-      full_name:
-        example: John Doe
         type: string
       id:
         example: 123e4567-e89b-12d3-a456-426614174000
@@ -300,7 +419,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: Update authenticated user's email, password, and/or full name
+      description: Update authenticated user's password
       parameters:
       - description: Update user request
         in: body
@@ -327,12 +446,6 @@ paths:
             additionalProperties:
               type: string
             type: object
-        "409":
-          description: Conflict
-          schema:
-            additionalProperties:
-              type: string
-            type: object
       security:
       - BearerAuth: []
       summary: Update user profile
@@ -342,7 +455,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Register a new user with email, password, and full name
+      description: Register a new user with email and password
       parameters:
       - description: User registration request
         in: body
@@ -586,6 +699,150 @@ paths:
       summary: Get mortgage calculation history
       tags:
       - Mortgage
+  /api/v1/profile:
+    get:
+      consumes:
+      - application/json
+      description: Get authenticated user's profile
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/resources.ProfileResource'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get profile
+      tags:
+      - Profile
+    post:
+      consumes:
+      - application/json
+      description: Create a new profile for authenticated user with DNI validation
+      parameters:
+      - description: Profile creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/resources.CreateProfileResource'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/resources.ProfileResource'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a new profile
+      tags:
+      - Profile
+    put:
+      consumes:
+      - application/json
+      description: Update authenticated user's profile
+      parameters:
+      - description: Update profile request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/resources.UpdateProfileResource'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/resources.ProfileResource'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update profile
+      tags:
+      - Profile
+  /api/v1/profile/reniec:
+    get:
+      consumes:
+      - application/json
+      description: Consult RENIEC API to get person information by DNI
+      parameters:
+      - description: DNI number (8 digits)
+        in: query
+        name: dni
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/resources.ReniecDataResource'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get person data from RENIEC by DNI
+      tags:
+      - Profile
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.
